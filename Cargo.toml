@@ -1,8 +1,11 @@
 [package]
 name = "hekit"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
+authors = ["Your Name <your.email@example.com>"]
+description = "A command-line file utility tool"
 
 [dependencies]
-clap = { version = "4.5.0", features = ["derive"] }  # 用于命令行参数解析，启用derive特性
-anyhow = "1.0.82"  # 用于错误处理
+anyhow = "1.0"
+clap = { version = "4.0", features = ["derive"] }
+shlex = "1.0"
