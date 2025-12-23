@@ -1,4 +1,4 @@
 pub mod batch_rename;
-
-// 简化重新导出
-pub use batch_rename::{BatchRenameConfig, BatchRenameExecutor};
+// 预留其他功能模块
+// pub mod file_search;
+// pub mod file_copy;

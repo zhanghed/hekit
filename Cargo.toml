@@ -3,7 +3,7 @@ name = "hekit"
 version = "0.1.0"
 edition = "2021"
 authors = ["Your Name <your.email@example.com>"]
-description = "A command-line file utility tool"
+description = "HEKIT - 一个简单实用的命令行工具集合"
 
 [dependencies]
 anyhow = "1.0"
