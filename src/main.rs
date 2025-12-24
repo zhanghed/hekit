@@ -1,4 +1,4 @@
-use hekit::App;
+use hekit::app::App;
 
 fn main() {
     let app = App::new();

@@ -8,4 +8,6 @@ description = "HEKIT - 一个简单实用的命令行工具集合"
 [dependencies]
 anyhow = "1.0"
 clap = { version = "4.0", features = ["derive"] }
-shlex = "1.0"
+shlex = "1.0" 
+glob = "0.3"
+regex = "1.0"
