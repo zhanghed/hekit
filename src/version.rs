@@ -1,14 +1,8 @@
 use anyhow::Result;
-use serde::Deserialize;
 
 const GITEE_API_URL: &str = "https://gitee.com/api/v5/repos";
-const REPO_OWNER: &str = "zhanghed";
-const REPO_NAME: &str = "hekit";
-
-#[derive(Debug, Deserialize)]
-struct ReleaseInfo {
-    tag_name: String,
-}
+const REPO_OWNER: &str = "zhanghed"; // 替换为你的Gitee用户名
+const REPO_NAME: &str = "hekit"; // 替换为你的仓库名
 
 /// 简化版版本检查器
 pub struct VersionChecker;
@@ -26,7 +20,7 @@ impl VersionChecker {
         Ok(())
     }
 
-    /// 获取最新版本号
+    /// 获取最新版本号（简化版，直接解析JSON字符串）
     async fn get_latest_version() -> Result<String> {
         let url = format!(
             "{}/{}/{}/releases/latest",
@@ -37,12 +31,18 @@ impl VersionChecker {
         let response = client.get(&url).send().await?;
 
         if response.status().is_success() {
-            let release: ReleaseInfo = response.json().await?;
-            Ok(release.tag_name)
-        } else {
-            // 网络错误时静默处理
-            Ok(env!("CARGO_PKG_VERSION").to_string())
+            let text = response.text().await?;
+            // 简单解析tag_name字段
+            if let Some(start) = text.find("\"tag_name\":\"") {
+                let start = start + 11; // "\"tag_name\":\""的长度
+                if let Some(end) = text[start..].find('\"') {
+                    return Ok(text[start..start + end].to_string());
+                }
+            }
         }
+
+        // 网络错误或解析失败时返回当前版本
+        Ok(env!("CARGO_PKG_VERSION").to_string())
     }
 
     /// 比较版本号

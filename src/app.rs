@@ -9,7 +9,7 @@ impl App {
     }
 
     pub fn run(&self) {
-        // 异步检查版本更新（简化版）
+        // 同步检查版本更新（简化版）
         self.check_version_simple();
 
         match self.run_interactive_mode() {
@@ -20,12 +20,17 @@ impl App {
         }
     }
 
-    /// 简化版版本检查
+    /// 简化版版本检查（同步方式）
     fn check_version_simple(&self) {
-        tokio::spawn(async {
-            if let Err(e) = crate::version::VersionChecker::check_update().await {
-                eprintln!("版本检查失败: {}", e);
-            }
+        // 使用简单的线程来执行异步任务
+        std::thread::spawn(|| {
+            // 创建临时的tokio运行时
+            let rt = tokio::runtime::Runtime::new().unwrap();
+            rt.block_on(async {
+                if let Err(e) = crate::version::VersionChecker::check_update().await {
+                    eprintln!("版本检查失败: {}", e);
+                }
+            });
         });
     }
 
