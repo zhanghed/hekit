@@ -1,5 +1,6 @@
-use crate::features::rename::config::BatchRenameConfig;
-use crate::features::rename::core::BatchRenameCore;
+use crate::features::compress::config::BatchCompressConfig;
+use crate::features::compress::core::BatchCompressCore;
+use crate::utils;
 use anyhow::{anyhow, Result};
 use clap::error::ErrorKind;
 use shlex::split;
@@ -7,23 +8,20 @@ use std::io::{self, Write};
 
 /// 显示使用说明
 pub fn show_usage() {
-    println!("批量重命名工具");
+    println!("批量压缩工具");
     println!("参数说明:");
-    println!(
-        "  -d, --path <目标文件夹>    目标文件夹（默认当前目录） 示例: -d \"F:\\hekit\\test\""
-    );
-    println!("  -m, --match <文件模式>     选文件（通配符 *） 示例: -m \"*.jpg\" 或 -m \"笔记*\"");
-    println!("  -p, --prefix <前缀>        加前缀 示例: -p \"2025_\"");
-    println!("  -s, --suffix <后缀>        加后缀（扩展名前） 示例: -s \"_备份\"");
-    println!("  -r, --replace <替换规则>   替换文字 示例: -r \"旧=新\" 或 -r \"/旧/新/\"");
-    println!("  -n, --number <起始序号>    加序号（默认1开始，3位补零） 示例: -n 1");
-    println!("  -e, --ext <扩展名>         改扩展名 示例: -e \"md\" 或 -e \"\"（删除扩展名）");
-    println!("  -v, --preview              预览效果（不真改名） 示例: -v");
-    println!("  -b, --backup               备份原文件（自动加.bak后缀） 示例: -b");
-    println!("  -c, --case                 不区分大小写匹配 示例: -c");
+    println!("  -d, --path <目标文件夹>    目标文件夹（默认当前目录） 示例: -d \"F:\\documents\"");
+    println!("  -m, --match <文件模式>     选文件（通配符 *） 示例: -m \"*.jpg\"");
+    println!("  -f, --format <压缩格式>    压缩格式（zip, tar.gz, tar.bz2） 示例: -f zip");
+    println!("  -o, --output <输出路径>    输出文件路径（默认同目录） 示例: -o \"F:\\backup\"");
+    println!("  -l, --level <压缩级别>     压缩级别 1-9（默认6） 示例: -l 9");
+    println!("  -r, --recursive           递归处理子目录 示例: -r");
+    println!("  -p, --preview             预览效果（不真压缩） 示例: -p");
     println!("实用示例:");
-    println!("  为F:\\hekit\\test目录下的所有jpg照片添加2024_前缀和从1开始的序号，并预览效果");
-    println!("     -d \"F:\\hekit\\test\" -m \"*.jpg\" -p \"2024_\" -n 1 -v");
+    println!("  压缩F:\\photos目录下所有jpg图片为zip格式，最高压缩级别");
+    println!("    -d \"F:\\photos\" -m \"*.jpg\" -f zip -l 9");
+    println!("  预览当前目录下所有txt文件的压缩效果");
+    println!("    -m \"*.txt\" -p");
 }
 
 /// 执行命令行命令
@@ -34,18 +32,18 @@ pub fn execute_command(input: &str) -> Result<()> {
         return Ok(());
     }
 
-    // 添加虚拟的 "rename" 命令前缀
-    let full_command = format!("rename {}", input);
+    // 添加虚拟的 "compress" 命令前缀
+    let full_command = format!("compress {}", input);
     let args = match split(&full_command) {
         Some(args) => args,
         None => return Err(anyhow!("命令行参数解析失败")),
     };
 
     // 使用 try_get_matches_from 来捕获错误
-    match BatchRenameConfig::build_clap_command().try_get_matches_from(&args) {
+    match BatchCompressConfig::build_clap_command().try_get_matches_from(&args) {
         Ok(matches) => {
-            let config = BatchRenameConfig::from_matches(&matches)?;
-            let core = BatchRenameCore::new(config);
+            let config = BatchCompressConfig::from_matches(&matches)?;
+            let core = BatchCompressCore::new(config);
             core.execute()
         }
         Err(e) => match e.kind() {
@@ -54,13 +52,13 @@ pub fn execute_command(input: &str) -> Result<()> {
                 Ok(())
             }
             ErrorKind::DisplayVersion => {
-                println!("批量重命名工具 v1.0.0");
+                println!("批量压缩工具 v1.0.0");
                 Ok(())
             }
             ErrorKind::MissingRequiredArgument => {
                 if e.to_string().contains("--match") {
                     Err(anyhow!(
-                        "缺少必要参数：必须指定 --match 参数来选择要重命名的文件"
+                        "缺少必要参数：必须指定 --match 参数来选择要压缩的文件"
                     ))
                 } else {
                     Err(anyhow!("参数解析失败: {}", e))
@@ -84,7 +82,7 @@ fn get_user_input(prompt: &str) -> Result<String> {
 
 /// 运行交互式界面
 pub fn run_interactive() -> Result<()> {
-    println!("=== 批量重命名工具 ===");
+    println!("批量压缩工具");
     println!("输入 help 查看详细说明，back 返回上一级");
 
     loop {
@@ -104,8 +102,8 @@ pub fn run_interactive() -> Result<()> {
             }
             _ => {
                 if let Err(e) = execute_command(&input) {
-                    eprintln!("命令执行失败: {}", e);
-                    eprintln!("请输入 'help' 查看正确的命令格式");
+                    utils::print_error(&format!("命令执行失败: {}", e));
+                    println!("请输入 'help' 查看正确的命令格式");
                 }
             }
         }

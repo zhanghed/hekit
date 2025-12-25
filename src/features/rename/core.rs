@@ -1,3 +1,4 @@
+use crate::features::rename::config::BatchRenameConfig;
 use anyhow::{anyhow, Result};
 use glob::glob;
 use regex::Regex;
@@ -6,29 +7,22 @@ use std::path::{Path, PathBuf};
 
 /// 批量重命名核心逻辑
 pub struct BatchRenameCore {
-    config: crate::features::rename::config::BatchRenameConfig,
+    pub config: BatchRenameConfig,
 }
 
 impl BatchRenameCore {
-    /// 创建新的重命名核心实例
-    pub fn new(config: crate::features::rename::config::BatchRenameConfig) -> Self {
+    /// 创建新的批量重命名实例
+    pub fn new(config: BatchRenameConfig) -> Self {
         Self { config }
     }
 
-    /// 执行重命名操作
+    /// 执行批量重命名
     pub fn execute(&self) -> Result<()> {
-        println!("开始重命名...");
-
-        // 扫描文件
         let files = self.scan_files()?;
         if files.is_empty() {
-            println!("未找到匹配的文件");
-            return Ok(());
+            return Err(anyhow!("没有找到匹配的文件"));
         }
 
-        println!("找到 {} 个文件", files.len());
-
-        // 生成新文件名
         let file_pairs = self.generate_new_filenames(&files)?;
 
         if self.config.preview {
@@ -42,11 +36,8 @@ impl BatchRenameCore {
 
     /// 扫描匹配的文件
     fn scan_files(&self) -> Result<Vec<PathBuf>> {
-        let pattern = format!(
-            "{}/{}",
-            self.config.path.display(),
-            self.config.match_pattern
-        );
+        let pattern = self.config.path.join(&self.config.match_pattern);
+        let pattern = pattern.to_string_lossy().to_string();
 
         let mut files = Vec::new();
 
@@ -57,7 +48,7 @@ impl BatchRenameCore {
                         files.push(entry);
                     }
                 }
-                files.sort(); // 确保顺序一致
+                files.sort();
                 Ok(files)
             }
             Err(e) => Err(anyhow!("文件扫描失败: {}", e)),
@@ -84,39 +75,44 @@ impl BatchRenameCore {
 
         let mut new_name = file_stem.to_string();
 
-        // 应用前缀
         if let Some(prefix) = &self.config.prefix {
             new_name = format!("{}{}", prefix, new_name);
         }
 
-        // 应用后缀
         if let Some(suffix) = &self.config.suffix {
             new_name = format!("{}{}", new_name, suffix);
         }
 
-        // 执行文本替换
+        // 修复：改进替换功能逻辑
         if let Some(replace_pattern) = &self.config.replace_pattern {
             if replace_pattern.starts_with('/') && replace_pattern.contains('/') {
-                // 正则表达式替换格式: /pattern/replacement/
+                // 正则替换模式：/pattern/replacement/
                 let parts: Vec<&str> = replace_pattern.splitn(3, '/').collect();
                 if parts.len() == 3 && parts[0].is_empty() {
                     if let Ok(regex) = Regex::new(parts[1]) {
                         new_name = regex.replace_all(&new_name, parts[2]).to_string();
                     }
                 }
-            } else if let Some((old, new)) = replace_pattern.split_once('=') {
-                // 简单替换格式: old=new
-                new_name = new_name.replace(old, new);
+            } else if replace_pattern.contains('=') {
+                // 简单替换模式：old=new
+                let parts: Vec<&str> = replace_pattern.splitn(2, '=').collect();
+                if parts.len() == 2 {
+                    new_name = new_name.replace(parts[0], parts[1]);
+                }
+            } else {
+                // 向后兼容：只删除匹配内容
+                new_name = new_name.replace(replace_pattern, "");
             }
         }
-        // 添加序号
-        if let Some(start) = self.config.number_start {
+
+        // 修复：序号生成逻辑
+        if self.config.number_start.is_some() {
+            let start = self.config.number_start.unwrap_or(1);
             let current_number = start + index - 1;
-            let number_str = format!("{:03}", current_number); // 3位补零
+            let number_str = format!("{:03}", current_number);
             new_name = format!("{}_{}", new_name, number_str);
         }
 
-        // 构建完整路径
         let new_path = if let Some(new_ext) = &self.config.extension {
             if new_ext.is_empty() {
                 parent_dir.join(new_name)
@@ -140,8 +136,7 @@ impl BatchRenameCore {
             println!("  {} → {}", old_path.display(), new_path.display());
         }
 
-        println!("\n总计: {} 个文件", file_pairs.len());
-        println!("使用 -v 选项预览完成");
+        println!("总计: {} 个文件", file_pairs.len());
         Ok(())
     }
 
@@ -152,7 +147,6 @@ impl BatchRenameCore {
         let mut error_count = 0;
 
         for (old_path, new_path) in file_pairs {
-            // 先备份原文件
             let backup_path = old_path.with_extension(format!(
                 "{}.bak",
                 old_path.extension().unwrap_or_default().to_string_lossy()
@@ -181,7 +175,7 @@ impl BatchRenameCore {
             }
         }
 
-        println!("\n完成: 成功 {} 个, 失败 {} 个", success_count, error_count);
+        println!("完成: 成功 {} 个, 失败 {} 个", success_count, error_count);
 
         if error_count > 0 {
             Err(anyhow!("部分文件重命名失败"))
@@ -208,7 +202,7 @@ impl BatchRenameCore {
             }
         }
 
-        println!("\n完成: 成功 {} 个, 失败 {} 个", success_count, error_count);
+        println!("完成: 成功 {} 个, 失败 {} 个", success_count, error_count);
 
         if error_count > 0 {
             Err(anyhow!("部分文件重命名失败"))
@@ -223,13 +217,11 @@ impl BatchRenameCore {
             return Err(anyhow!("源文件和目标文件路径相同"));
         }
 
-        // 检查目标文件是否存在，如果存在则自动处理
         if new_path.exists() {
             if self.config.preview {
                 return Err(anyhow!("目标文件已存在: {}", new_path.display()));
             }
 
-            // 自动生成不冲突的文件名
             let mut counter = 1;
             let mut new_path_with_counter = new_path.to_path_buf();
 

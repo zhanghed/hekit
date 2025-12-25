@@ -2,6 +2,6 @@ pub mod config;
 pub mod core;
 pub mod interface;
 
-pub use config::BatchRenameConfig;
-pub use core::BatchRenameCore;
+pub use config::BatchSearchConfig;
+pub use core::BatchSearchCore;
 pub use interface::{execute_command, run_interactive, show_usage};
