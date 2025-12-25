@@ -4,4 +4,4 @@ pub mod interface;
 
 pub use config::BatchSearchConfig;
 pub use core::BatchSearchCore;
-pub use interface::{execute_command, run_interactive, show_usage};
+pub use interface::{run_interactive, SearchTool};

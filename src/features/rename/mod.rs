@@ -4,4 +4,4 @@ pub mod interface;
 
 pub use config::BatchRenameConfig;
 pub use core::BatchRenameCore;
-pub use interface::{execute_command, run_interactive, show_usage};
+pub use interface::{run_interactive, RenameTool};

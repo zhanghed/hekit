@@ -1,4 +1,5 @@
 use crate::features::rename::config::BatchRenameConfig;
+use crate::utils;
 use anyhow::{anyhow, Result};
 use glob::glob;
 use regex::Regex;
@@ -130,12 +131,12 @@ impl BatchRenameCore {
 
     /// 执行预览模式
     fn execute_preview(&self, file_pairs: &[(PathBuf, PathBuf)]) -> Result<()> {
-        println!("预览结果:");
+        // 将 println!("预览结果:"); 改为
+        utils::print_info("预览结果:");
 
         for (old_path, new_path) in file_pairs {
             println!("  {} → {}", old_path.display(), new_path.display());
         }
-
         println!("总计: {} 个文件", file_pairs.len());
         Ok(())
     }
@@ -145,13 +146,11 @@ impl BatchRenameCore {
         println!("开始备份重命名...");
         let mut success_count = 0;
         let mut error_count = 0;
-
         for (old_path, new_path) in file_pairs {
             let backup_path = old_path.with_extension(format!(
                 "{}.bak",
                 old_path.extension().unwrap_or_default().to_string_lossy()
             ));
-
             match fs::copy(old_path, &backup_path) {
                 Ok(_) => match fs::rename(old_path, new_path) {
                     Ok(_) => {
@@ -174,9 +173,7 @@ impl BatchRenameCore {
                 }
             }
         }
-
         println!("完成: 成功 {} 个, 失败 {} 个", success_count, error_count);
-
         if error_count > 0 {
             Err(anyhow!("部分文件重命名失败"))
         } else {
@@ -188,7 +185,6 @@ impl BatchRenameCore {
     fn execute_batch(&self, file_pairs: &[(PathBuf, PathBuf)]) -> Result<()> {
         let mut success_count = 0;
         let mut error_count = 0;
-
         for (old_path, new_path) in file_pairs {
             match self.rename_file(old_path, new_path) {
                 Ok(_) => {
@@ -201,9 +197,7 @@ impl BatchRenameCore {
                 }
             }
         }
-
         println!("完成: 成功 {} 个, 失败 {} 个", success_count, error_count);
-
         if error_count > 0 {
             Err(anyhow!("部分文件重命名失败"))
         } else {

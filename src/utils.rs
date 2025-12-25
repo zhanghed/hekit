@@ -26,3 +26,21 @@ pub fn print_success(msg: &str) {
 pub fn print_info(msg: &str) {
     println!("信息: {}", msg);
 }
+
+/// 格式化打印成功信息（使用命名参数）
+pub fn print_success_format(template: &str, args: &[(&str, &dyn std::fmt::Display)]) {
+    let mut message = template.to_string();
+    for (key, value) in args {
+        message = message.replace(&format!("{{{}}}", key), &value.to_string());
+    }
+    println!("成功: {}", message);
+}
+
+/// 格式化打印错误信息（使用命名参数）
+pub fn print_error_format(template: &str, args: &[(&str, &dyn std::fmt::Display)]) {
+    let mut message = template.to_string();
+    for (key, value) in args {
+        message = message.replace(&format!("{{{}}}", key), &value.to_string());
+    }
+    eprintln!("错误: {}", message);
+}

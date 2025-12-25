@@ -1,3 +1,4 @@
+use anyhow::{anyhow, Result};
 use clap::{Arg, ArgAction, Command};
 use std::path::PathBuf;
 
@@ -11,6 +12,12 @@ pub struct BatchCompressConfig {
     pub recursive: bool,
     pub preview: bool,
 }
+
+// 压缩相关常量定义
+const SUPPORTED_FORMATS: [&str; 3] = ["zip", "tar.gz", "tar.bz2"];
+const DEFAULT_COMPRESSION_LEVEL: u32 = 6;
+const MIN_COMPRESSION_LEVEL: u32 = 1;
+const MAX_COMPRESSION_LEVEL: u32 = 9;
 
 impl BatchCompressConfig {
     /// 创建CLAP命令
@@ -73,7 +80,7 @@ impl BatchCompressConfig {
     }
 
     /// 从CLAP匹配结果创建配置
-    pub fn from_matches(matches: &clap::ArgMatches) -> Result<Self, anyhow::Error> {
+    pub fn from_matches(matches: &clap::ArgMatches) -> Result<Self> {
         let path = matches
             .get_one::<String>("path")
             .map(PathBuf::from)
@@ -81,7 +88,7 @@ impl BatchCompressConfig {
 
         let match_pattern = matches
             .get_one::<String>("match")
-            .ok_or_else(|| anyhow::anyhow!("必须指定文件匹配模式"))?
+            .ok_or_else(|| anyhow!("必须指定文件匹配模式"))?
             .to_string();
 
         let output_format = matches
@@ -96,7 +103,7 @@ impl BatchCompressConfig {
         let compression_level = matches
             .get_one::<String>("level")
             .and_then(|s| s.parse().ok())
-            .unwrap_or(6);
+            .unwrap_or(DEFAULT_COMPRESSION_LEVEL);
 
         let recursive = matches.get_flag("recursive");
         let preview = matches.get_flag("preview");
@@ -113,24 +120,27 @@ impl BatchCompressConfig {
     }
 
     /// 验证配置
-    pub fn validate(&self) -> Result<(), anyhow::Error> {
+    pub fn validate(&self) -> Result<()> {
         if !self.path.exists() {
-            return Err(anyhow::anyhow!("目标路径不存在: {}", self.path.display()));
+            return Err(anyhow!("目标路径不存在: {}", self.path.display()));
         }
 
         if !self.path.is_dir() {
-            return Err(anyhow::anyhow!(
-                "目标路径必须是目录: {}",
-                self.path.display()
+            return Err(anyhow!("目标路径必须是目录: {}", self.path.display()));
+        }
+
+        if !SUPPORTED_FORMATS.contains(&self.output_format.as_str()) {
+            return Err(anyhow!("不支持的压缩格式: {}", self.output_format));
+        }
+
+        if self.compression_level < MIN_COMPRESSION_LEVEL
+            || self.compression_level > MAX_COMPRESSION_LEVEL
+        {
+            return Err(anyhow!(
+                "压缩级别必须在{}-{}之间",
+                MIN_COMPRESSION_LEVEL,
+                MAX_COMPRESSION_LEVEL
             ));
-        }
-
-        if !["zip", "tar.gz", "tar.bz2"].contains(&self.output_format.as_str()) {
-            return Err(anyhow::anyhow!("不支持的压缩格式: {}", self.output_format));
-        }
-
-        if self.compression_level < 1 || self.compression_level > 9 {
-            return Err(anyhow::anyhow!("压缩级别必须在1-9之间"));
         }
 
         Ok(())
