@@ -125,14 +125,6 @@ src/
 
 本项目采用MIT许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
 
-## 🙏 致谢
-
-感谢以下开源项目的支持：
-- [anyhow](https://github.com/dtolnay/anyhow) - 错误处理
-- [clap](https://github.com/clap-rs/clap) - 命令行参数解析
-- [glob](https://github.com/rust-lang/glob) - 文件匹配
-- [regex](https://github.com/rust-lang/regex) - 正则表达式
-
 
 ## ❓ 常见问题
 
