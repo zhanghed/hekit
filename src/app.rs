@@ -1,6 +1,6 @@
 use crate::utils;
 use anyhow::Result;
-use webbrowser;
+use std::env;
 
 /// 主应用程序结构体
 pub struct App {}
@@ -43,7 +43,7 @@ impl App {
                     self.run_batch_compress()?;
                 }
                 "0" => {
-                    self.run_check_update()?;
+                    self.show_about_info()?;
                 }
                 _ => {
                     utils::print_error("无效的选择，请重新输入");
@@ -67,15 +67,23 @@ impl App {
         crate::features::compress::interface::run_interactive()
     }
 
-    /// 检查更新
-    fn run_check_update(&self) -> Result<()> {
+    /// 显示关于信息（包含检查更新）
+    fn show_about_info(&self) -> Result<()> {
+        println!("=== HEKIT - 关于 ===");
+        println!("版本: {}", env!("CARGO_PKG_VERSION"));
+        println!("作者: zhanghed");
+        println!("项目地址: https://github.com/zhanghed/hekit");
+        println!("下载地址: https://gitee.com/zhanghed/hekit/releases");
+        println!("======================");
+
+        // 检查更新但不主动跳转
         println!("检查更新中...");
         if let Ok((has_update, latest_version)) =
             crate::version::VersionChecker::check_update_sync()
         {
             if has_update && !latest_version.is_empty() {
-                Self::show_update_prompt(&latest_version);
-                Self::open_download_page();
+                println!("发现新版本: {}", latest_version);
+                println!("请访问下载地址获取最新版本");
             } else {
                 println!("已是最新版本");
             }
@@ -91,26 +99,7 @@ impl App {
         println!("1. 批量重命名工具");
         println!("2. 批量搜索工具");
         println!("3. 批量压缩工具");
-        println!("0. 检查更新");
+        println!("0. 关于HEKIT");
         println!("======================");
-    }
-
-    /// 显示更新提示
-    fn show_update_prompt(latest_version: &str) {
-        println!("发现新版本: {}", latest_version);
-        println!("正在打开下载页面...");
-    }
-
-    /// 打开下载页面
-    fn open_download_page() {
-        let download_url = "https://gitee.com/zhanghed/hekit/releases";
-        match webbrowser::open(download_url) {
-            Ok(_) => {
-                println!("已打开浏览器");
-            }
-            Err(_) => {
-                println!("无法打开浏览器，请手动访问: {}", download_url);
-            }
-        }
     }
 }
