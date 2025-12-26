@@ -20,29 +20,43 @@ pub trait ToolInterface {
 /// # 参数
 /// - `tool_name`: 工具名称，用于界面显示
 /// - `execute_fn`: 命令执行函数
-pub fn run_interactive<F>(tool_name: &str, execute_fn: F) -> Result<()>
+/// - `show_usage_fn`: 显示使用说明的函数
+pub fn run_interactive<F, G>(tool_name: &str, execute_fn: F, show_usage_fn: G) -> Result<()>
 where
     F: Fn(&str) -> Result<()>,
+    G: Fn(),
 {
-    println!("=== {} ===", tool_name);
-    utils::print_info("输入 help 查看详细说明，back 返回上一级");
+    utils::print_chapter_title(&format!("{}", tool_name));
+    println!("输入 help 查看详细说明，back 返回上一级");
 
     loop {
         let input = utils::get_user_input("请输入命令: ")?;
         match input.as_str() {
             "back" => {
-                utils::print_info("返回主菜单");
+                println!("返回主菜单");
                 break;
             }
             "help" => {
-                // 子模块会实现具体的 show_usage
-                utils::print_info("请输入具体命令查看帮助");
+                show_usage_fn();
+                // 移除空行，使用空格分隔
             }
             "" => continue, // 空输入，继续循环
             _ => {
-                if let Err(e) = execute_fn(&input) {
-                    utils::print_error(&format!("命令执行失败: {e}"));
-                    utils::print_info("请输入 'help' 查看正确的命令格式");
+                match execute_fn(&input) {
+                    Ok(_) => {
+                        println!("命令执行完成");
+                        // 移除空行，使用空格分隔
+                    }
+                    Err(e) => {
+                        let error_msg = e.to_string();
+                        if error_msg == "显示帮助信息" || error_msg == "显示版本信息" {
+                            // 帮助信息和版本信息不是真正的错误
+                        } else {
+                            println!("命令执行失败: {e}");
+                            println!("请输入 'help' 查看正确的命令格式");
+                            // 移除空行，使用空格分隔
+                        }
+                    }
                 }
             }
         }
@@ -68,7 +82,7 @@ where
     // 处理help命令
     if input.trim() == "help" {
         show_usage_fn();
-        return Err(anyhow!("显示帮助信息"));
+        return Ok(clap::ArgMatches::default()); // 返回空的匹配结果，表示正常显示帮助
     }
 
     // 解析命令行参数
@@ -84,11 +98,11 @@ where
         Err(e) => match e.kind() {
             ErrorKind::DisplayHelp => {
                 show_usage_fn();
-                Err(anyhow!("显示帮助信息"))
+                Ok(clap::ArgMatches::default()) // 返回空的匹配结果，表示正常显示帮助
             }
             ErrorKind::DisplayVersion => {
-                println!("{} v1.0.0", command_prefix);
-                Err(anyhow!("显示版本信息"))
+                utils::print_info(&format!("{} v1.0.0", command_prefix));
+                Ok(clap::ArgMatches::default()) // 返回空的匹配结果，表示正常显示版本
             }
             _ => Err(anyhow!("参数解析失败: {e}")),
         },

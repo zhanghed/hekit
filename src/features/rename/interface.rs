@@ -16,10 +16,14 @@ impl ToolInterface for RenameTool {
 
     /// 显示使用说明
     fn show_usage() {
-        println!("批量重命名工具");
-        println!("参数说明:");
+        use crate::utils;
+
+        utils::print_title("批量重命名工具 - 使用说明");
+        utils::print_separator();
+
+        utils::print_info("参数说明:");
         println!(
-            "  -d, --path <目标文件夹>    目标文件夹（默认当前目录） 示例: -d \"F:\\hekit\\test\""
+            "  -d, --path <目标文件夹>     目标文件夹（默认当前目录） 示例: -d \"F:\\hekit\\test\""
         );
         println!(
             "  -m, --match <文件模式>     选文件（通配符 *） 示例: -m \"*.jpg\" 或 -m \"笔记*\""
@@ -32,9 +36,14 @@ impl ToolInterface for RenameTool {
         println!("  -v, --preview              预览效果（不真改名） 示例: -v");
         println!("  -b, --backup               备份原文件（自动加.bak后缀） 示例: -b");
         println!("  -c, --case                 不区分大小写匹配 示例: -c");
-        println!("实用示例:");
-        println!("  为F:\\hekit\\test目录下的所有jpg照片添加2024_前缀和从1开始的序号，并预览效果");
-        println!("     -d \"F:\\hekit\\test\" -m \"*.jpg\" -p \"2024_\" -n 1 -v");
+
+        utils::print_separator();
+        utils::print_info("实用示例:");
+        utils::print_success(
+            "为F:\\hekit\\test目录下的所有jpg照片添加2024_前缀和从1开始的序号，并预览效果",
+        );
+        println!("  命令: -d \"F:\\hekit\\test\" -m \"*.jpg\" -p \"2024_\" -n 1 -v");
+        utils::print_separator();
     }
 
     /// 执行命令
@@ -55,5 +64,7 @@ impl ToolInterface for RenameTool {
 
 /// 运行交互式界面
 pub fn run_interactive() -> Result<()> {
-    common::run_interactive(RenameTool::tool_name(), RenameTool::execute_command)
+    common::run_interactive(RenameTool::tool_name(), RenameTool::execute_command, || {
+        RenameTool::show_usage();
+    })
 }

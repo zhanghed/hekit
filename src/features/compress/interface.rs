@@ -53,5 +53,11 @@ impl ToolInterface for CompressTool {
 
 /// 运行交互式压缩界面
 pub fn run_interactive() -> Result<()> {
-    common::run_interactive(CompressTool::tool_name(), CompressTool::execute_command)
+    common::run_interactive(
+        CompressTool::tool_name(),
+        CompressTool::execute_command,
+        || {
+            CompressTool::show_usage();
+        },
+    )
 }

@@ -62,5 +62,7 @@ impl ToolInterface for SearchTool {
 
 /// 运行交互式界面
 pub fn run_interactive() -> Result<()> {
-    common::run_interactive(SearchTool::tool_name(), SearchTool::execute_command)
+    common::run_interactive(SearchTool::tool_name(), SearchTool::execute_command, || {
+        SearchTool::show_usage();
+    })
 }

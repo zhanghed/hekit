@@ -28,27 +28,31 @@ impl App {
             let choice = match utils::get_user_input("请选择 (输入数字): ") {
                 Ok(input) => input,
                 Err(e) => {
-                    utils::print_error(&format!("获取用户输入失败: {}", e));
+                    println!("获取用户输入失败: {}", e);
                     continue;
                 }
             };
             match choice.as_str() {
                 "1" => {
+                    println!("进入批量重命名工具");
                     self.run_batch_rename()?;
                 }
                 "2" => {
+                    println!("进入批量搜索工具");
                     self.run_batch_search()?;
                 }
                 "3" => {
+                    println!("进入批量压缩工具");
                     self.run_batch_compress()?;
                 }
                 "0" => {
                     self.show_about_info()?;
                 }
                 _ => {
-                    utils::print_error("无效的选择，请重新输入");
+                    println!("无效的选择，请重新输入");
                 }
             }
+            // 移除空行，使用空格分隔
         }
     }
 
@@ -69,12 +73,12 @@ impl App {
 
     /// 显示关于信息（包含检查更新）
     fn show_about_info(&self) -> Result<()> {
-        println!("=== HEKIT - 关于 ===");
+        utils::print_chapter_title("HEKIT - 关于");
         println!("版本: {}", env!("CARGO_PKG_VERSION"));
         println!("作者: zhanghed");
         println!("项目地址: https://github.com/zhanghed/hekit");
         println!("下载地址: https://gitee.com/zhanghed/hekit/releases");
-        println!("======================");
+        utils::print_simple_separator();
 
         // 检查更新但不主动跳转
         println!("检查更新中...");
@@ -95,11 +99,11 @@ impl App {
 
     /// 显示主菜单
     fn show_main_menu() {
-        println!("=== HEKIT - 一个简单实用的命令行工具集合 ===");
-        println!("1. 批量重命名工具");
-        println!("2. 批量搜索工具");
-        println!("3. 批量压缩工具");
-        println!("0. 关于HEKIT");
-        println!("======================");
+        utils::print_title("HEKIT - 一个简单实用的命令行工具集合");
+        utils::print_menu_item("1", "批量重命名工具");
+        utils::print_menu_item("2", "批量搜索工具");
+        utils::print_menu_item("3", "批量压缩工具");
+        utils::print_menu_item("0", "关于HEKIT");
+        utils::print_separator();
     }
 }
