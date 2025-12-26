@@ -45,16 +45,18 @@ where
                 match execute_fn(&input) {
                     Ok(_) => {
                         println!("命令执行完成");
-                        // 移除空行，使用空格分隔
                     }
                     Err(e) => {
                         let error_msg = e.to_string();
                         if error_msg == "显示帮助信息" || error_msg == "显示版本信息" {
                             // 帮助信息和版本信息不是真正的错误
-                        } else {
-                            println!("命令执行失败: {e}");
+                        } else if error_msg.contains("参数解析失败") {
+                            // 参数解析错误已经在execute_common_command中显示过详细信息
+                            println!("命令执行失败: 参数格式错误");
                             println!("请输入 'help' 查看正确的命令格式");
-                            // 移除空行，使用空格分隔
+                        } else {
+                            // 其他错误显示一次错误信息
+                            println!("命令执行失败: {e}");
                         }
                     }
                 }
@@ -85,8 +87,11 @@ where
         return Ok(clap::ArgMatches::default()); // 返回空的匹配结果，表示正常显示帮助
     }
 
+    // 预处理Windows路径 - 修复单反斜杠问题
+    let preprocessed_input = preprocess_windows_paths(input);
+
     // 解析命令行参数
-    let full_command = format!("{} {}", command_prefix, input);
+    let full_command = format!("{} {}", command_prefix, preprocessed_input);
     let args = match split(&full_command) {
         Some(args) => args,
         None => return Err(anyhow!("命令行参数解析失败")),
@@ -104,7 +109,36 @@ where
                 utils::print_info(&format!("{} v1.0.0", command_prefix));
                 Ok(clap::ArgMatches::default()) // 返回空的匹配结果，表示正常显示版本
             }
-            _ => Err(anyhow!("参数解析失败: {e}")),
+            _ => {
+                // 提供更详细的错误信息，但只显示一次
+                println!("详细错误信息: {}", e);
+                println!("请检查参数格式是否正确，特别是路径参数");
+                Err(anyhow!("参数解析失败"))
+            }
         },
     }
+}
+
+// 预处理Windows路径，修复单反斜杠问题
+fn preprocess_windows_paths(input: &str) -> String {
+    // 处理单反斜杠路径格式 C:\
+    // 将 C:\ 转换为 C:\\ 以避免被当作转义字符
+    let mut result = String::new();
+    let mut chars = input.chars().peekable();
+
+    while let Some(c) = chars.next() {
+        if c == '\\' && chars.peek() == Some(&'"') {
+            // 反斜杠后面是引号，需要转义
+            result.push_str("\\\\");
+            result.push('"');
+            chars.next(); // 跳过引号
+        } else if c == '\\' && (chars.peek().is_none() || chars.peek() == Some(&' ')) {
+            // 反斜杠在路径末尾或后面是空格，需要转义
+            result.push_str("\\\\");
+        } else {
+            result.push(c);
+        }
+    }
+
+    result
 }

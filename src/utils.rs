@@ -80,3 +80,60 @@ pub fn print_success_format(template: &str, args: &[(&str, &dyn std::fmt::Displa
     }
     println!("{}", message);
 }
+
+/// 打印醒目标题
+pub fn print_banner_title(title: &str) {
+    let separator = "=".repeat(title.len() + 4);
+    println!("{}", separator);
+    println!("  {}  ", title);
+    println!("{}", separator);
+    println!();
+}
+
+/// 打印极简程序标题（无边框装饰）
+pub fn print_simple_program_title(name: &str, version: &str, description: &str) {
+    println!();
+    println!("{} v{}", name, version);
+    if !description.is_empty() {
+        println!("{}", description);
+    }
+    println!();
+}
+
+/// 打印精美的程序标题（带边框和装饰）
+pub fn print_fancy_program_title(name: &str, version: &str, description: &str) {
+    let title = format!("{} v{}", name, version);
+    let max_width = title.len().max(description.len()) + 10;
+    let top_border = format!("╔{}╗", "═".repeat(max_width - 2));
+    let bottom_border = format!("╚{}╝", "═".repeat(max_width - 2));
+    let empty_line = format!("║{:width$}║", "", width = max_width - 2);
+
+    println!();
+    println!("{}", top_border);
+    println!("{}", empty_line);
+    println!("║{:^width$}║", title, width = max_width - 2);
+    println!("{}", empty_line);
+    if !description.is_empty() {
+        println!("║{:^width$}║", description, width = max_width - 2);
+        println!("{}", empty_line);
+    }
+    println!("{}", bottom_border);
+    println!();
+}
+
+/// 打印现代化的程序标题（简洁风格）
+pub fn print_modern_program_title(name: &str, version: &str, description: &str) {
+    let title = format!("✨ {} v{} ✨", name, version);
+    let max_width = title.len().max(description.len()) + 4;
+    let separator = "─".repeat(max_width);
+
+    println!();
+    println!("┌{}┐", separator);
+    println!("│{:^width$}│", title, width = max_width);
+    if !description.is_empty() {
+        println!("│{:^width$}│", "", width = max_width);
+        println!("│{:^width$}│", description, width = max_width);
+    }
+    println!("└{}┘", separator);
+    println!();
+}

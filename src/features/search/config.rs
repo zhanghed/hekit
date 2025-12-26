@@ -70,12 +70,28 @@ impl BatchSearchConfig {
             )
     }
 
+    /// 修复Windows路径中的反斜杠问题
+    fn fix_windows_path(path: &str) -> String {
+        // 处理单反斜杠路径格式 C:\
+        if path.ends_with('\\') && !path.ends_with("\\\\") {
+            // 对于以单反斜杠结尾的路径，直接返回原路径
+            // Windows路径系统会自动处理单反斜杠
+            path.to_string()
+        } else {
+            path.to_string()
+        }
+    }
+
     /// 从命令行参数解析配置
     pub fn from_matches(matches: &clap::ArgMatches) -> Result<Self> {
-        let path = matches
+        let raw_path = matches
             .get_one::<String>("path")
-            .map(|s| PathBuf::from(s))
-            .unwrap_or_else(|| PathBuf::from("."));
+            .map(|s| s.as_str())
+            .unwrap_or(".");
+
+        // 修复Windows路径问题
+        let fixed_path = Self::fix_windows_path(raw_path);
+        let path = PathBuf::from(&fixed_path);
 
         let name_pattern = matches
             .get_one::<String>("name")

@@ -23,6 +23,9 @@ impl App {
 
     /// 运行交互式模式 - 显示主菜单并处理用户选择
     pub fn run_interactive_mode(&self) -> Result<()> {
+        // 显示程序标题
+        Self::show_program_title();
+
         loop {
             Self::show_main_menu();
             let choice = match utils::get_user_input("请选择 (输入数字): ") {
@@ -54,6 +57,16 @@ impl App {
             }
             // 移除空行，使用空格分隔
         }
+    }
+
+    /// 显示程序标题
+    fn show_program_title() {
+        // 使用极简的标题设计
+        utils::print_simple_program_title(
+            "HEKIT",
+            env!("CARGO_PKG_VERSION"),
+            "一个简单实用的命令行工具集合",
+        );
     }
 
     /// 运行批量重命名工具
@@ -99,7 +112,8 @@ impl App {
 
     /// 显示主菜单
     fn show_main_menu() {
-        utils::print_title("HEKIT - 一个简单实用的命令行工具集合");
+        // 使用简洁的章节标题
+        utils::print_chapter_title("HEKIT - 主菜单");
         utils::print_menu_item("1", "批量重命名工具");
         utils::print_menu_item("2", "批量搜索工具");
         utils::print_menu_item("3", "批量压缩工具");

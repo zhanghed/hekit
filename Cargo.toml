@@ -2,6 +2,8 @@
 name = "hekit"
 version = "1.0.2"
 authors = ["zhanghed"]
+description = "一个简单实用的命令行工具集合"
+homepage = "https://gitee.com/zhanghed/hekit"
 edition = "2021"
 
 [dependencies]
@@ -15,6 +17,7 @@ tar = "0.4"
 flate2 = "1"
 bzip2 = "0.4"
 reqwest = { version = "0.11", features = ["blocking", "json"] }
+winapi = { version = "0.3", features = ["wincon", "winuser"] }
 
 [package.metadata.winres]
 icon = "src/assets/hekit.ico"
