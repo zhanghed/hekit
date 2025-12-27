@@ -48,6 +48,11 @@ impl App {
                     println!("进入批量压缩工具");
                     self.run_batch_compress()?;
                 }
+                "4" => {
+                    // 添加转换工具选项
+                    println!("进入批量转换工具");
+                    self.run_batch_convert()?;
+                }
                 "0" => {
                     self.show_about_info()?;
                 }
@@ -84,6 +89,11 @@ impl App {
         crate::features::compress::interface::run_interactive()
     }
 
+    /// 运行批量转换工具 - 新增方法
+    fn run_batch_convert(&self) -> Result<()> {
+        crate::features::convert::interface::run_interactive()
+    }
+
     /// 显示关于信息（包含检查更新）
     fn show_about_info(&self) -> Result<()> {
         utils::print_chapter_title("HEKIT - 关于");
@@ -117,6 +127,7 @@ impl App {
         utils::print_menu_item("1", "批量重命名工具");
         utils::print_menu_item("2", "批量搜索工具");
         utils::print_menu_item("3", "批量压缩工具");
+        utils::print_menu_item("4", "批量转换工具"); // 添加转换工具菜单项
         utils::print_menu_item("0", "关于HEKIT");
         utils::print_separator();
     }
