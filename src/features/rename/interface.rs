@@ -1,5 +1,4 @@
-use anyhow::Result;
-
+use crate::error::HekitResult;
 use crate::features::common;
 use crate::features::common::ToolInterface;
 use crate::features::rename::config::BatchRenameConfig;
@@ -40,8 +39,8 @@ impl ToolInterface for RenameTool {
     }
 
     /// 执行命令
-    fn execute_command(input: &str) -> Result<()> {
-        let matches = common::execute_common_command(
+    fn execute_command(input: &str) -> anyhow::Result<()> {
+        let matches = common::execute_common_command_hekit(
             input,
             "rename",
             BatchRenameConfig::build_clap_command,
@@ -51,13 +50,27 @@ impl ToolInterface for RenameTool {
         // 具体处理逻辑
         let config = BatchRenameConfig::from_matches(&matches)?;
         let core = BatchRenameCore::new(config);
-        core.execute()
+        core.execute().map_err(|e| anyhow::anyhow!(e.to_string()))
     }
 }
 
 /// 运行交互式界面
-pub fn run_interactive() -> Result<()> {
-    common::run_interactive(RenameTool::tool_name(), RenameTool::execute_command, || {
-        RenameTool::show_usage();
-    })
+pub fn run_interactive() -> HekitResult<()> {
+    common::run_interactive_hekit(
+        RenameTool::tool_name(),
+        |input| {
+            let matches = common::execute_common_command_hekit(
+                input,
+                "rename",
+                BatchRenameConfig::build_clap_command,
+                RenameTool::show_usage,
+            )?;
+            let config = BatchRenameConfig::from_matches(&matches)?;
+            let core = BatchRenameCore::new(config);
+            core.execute()
+        },
+        || {
+            RenameTool::show_usage();
+        },
+    )
 }

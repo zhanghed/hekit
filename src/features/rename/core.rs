@@ -1,6 +1,8 @@
+use crate::error::{HekitError, HekitResult};
 use crate::features::rename::config::BatchRenameConfig;
+use crate::hekit_error; // 添加宏导入
+use crate::progress::ProgressManager;
 use crate::utils;
-use anyhow::{anyhow, Result};
 use glob::glob;
 use regex::Regex;
 use std::fs;
@@ -18,25 +20,27 @@ impl BatchRenameCore {
     }
 
     /// 执行批量重命名
-    pub fn execute(&self) -> Result<()> {
+    pub fn execute(&self) -> HekitResult<()> {
         let files = self.scan_files()?;
-        if files.is_empty() {
-            return Err(anyhow!("没有找到匹配的文件"));
-        }
-
-        let file_pairs = self.generate_new_filenames(&files)?;
+        let file_pairs: Vec<(PathBuf, PathBuf)> = files
+            .iter()
+            .enumerate()
+            .map(|(i, file_path)| {
+                let new_path = self.generate_new_filename(file_path, i + 1)?;
+                Ok((file_path.clone(), new_path))
+            })
+            .collect::<HekitResult<Vec<_>>>()?;
 
         if self.config.preview {
-            self.execute_preview(&file_pairs)
-        } else if self.config.backup {
-            self.execute_with_backup(&file_pairs)
-        } else {
-            self.execute_batch(&file_pairs)
+            return self.execute_preview(&file_pairs);
         }
+
+        // 删除备份选项，直接使用批量重命名
+        self.execute_batch(&file_pairs)
     }
 
     /// 扫描匹配的文件
-    fn scan_files(&self) -> Result<Vec<PathBuf>> {
+    fn scan_files(&self) -> HekitResult<Vec<PathBuf>> {
         let pattern = self.config.path.join(&self.config.match_pattern);
         let pattern = pattern.to_string_lossy().to_string();
 
@@ -52,26 +56,19 @@ impl BatchRenameCore {
                 files.sort();
                 Ok(files)
             }
-            Err(e) => Err(anyhow!("文件扫描失败: {}", e)),
+            Err(e) => hekit_error!(FileOperation, &format!("文件扫描失败: {}", e)),
         }
     }
 
-    /// 生成新文件名
-    fn generate_new_filenames(&self, files: &[PathBuf]) -> Result<Vec<(PathBuf, PathBuf)>> {
-        let mut file_pairs = Vec::new();
-
-        for (index, file_path) in files.iter().enumerate() {
-            let new_filename = self.generate_new_filename(file_path, index + 1)?;
-            file_pairs.push((file_path.clone(), new_filename));
-        }
-
-        Ok(file_pairs)
-    }
+    // 删除 generate_new_filenames 方法（第64-72行）
 
     /// 为单个文件生成新文件名
-    fn generate_new_filename(&self, file_path: &Path, index: usize) -> Result<PathBuf> {
+    fn generate_new_filename(&self, file_path: &Path, index: usize) -> HekitResult<PathBuf> {
         let parent_dir = file_path.parent().unwrap_or(Path::new("."));
-        let file_stem = file_path.file_stem().unwrap_or_default().to_string_lossy();
+        let file_stem = file_path
+            .file_stem()
+            .ok_or_else(|| HekitError::Rename("无法获取文件名".to_string()))?
+            .to_string_lossy();
         let extension = file_path.extension().unwrap_or_default().to_string_lossy();
 
         let mut new_name = file_stem.to_string();
@@ -130,8 +127,7 @@ impl BatchRenameCore {
     }
 
     /// 执行预览模式
-    fn execute_preview(&self, file_pairs: &[(PathBuf, PathBuf)]) -> Result<()> {
-        // 将 println!("预览结果:"); 改为
+    fn execute_preview(&self, file_pairs: &[(PathBuf, PathBuf)]) -> HekitResult<()> {
         utils::print_info("预览结果:");
 
         for (old_path, new_path) in file_pairs {
@@ -141,51 +137,17 @@ impl BatchRenameCore {
         Ok(())
     }
 
-    /// 执行带备份的重命名
-    fn execute_with_backup(&self, file_pairs: &[(PathBuf, PathBuf)]) -> Result<()> {
-        println!("开始备份重命名...");
-        let mut success_count = 0;
-        let mut error_count = 0;
-        for (old_path, new_path) in file_pairs {
-            let backup_path = old_path.with_extension(format!(
-                "{}.bak",
-                old_path.extension().unwrap_or_default().to_string_lossy()
-            ));
-            match fs::copy(old_path, &backup_path) {
-                Ok(_) => match fs::rename(old_path, new_path) {
-                    Ok(_) => {
-                        println!(
-                            "✓ {} → {} (备份: {})",
-                            old_path.display(),
-                            new_path.display(),
-                            backup_path.display()
-                        );
-                        success_count += 1;
-                    }
-                    Err(e) => {
-                        eprintln!("✗ {} 重命名失败: {}", old_path.display(), e);
-                        error_count += 1;
-                    }
-                },
-                Err(e) => {
-                    eprintln!("✗ {} 备份失败: {}", old_path.display(), e);
-                    error_count += 1;
-                }
-            }
-        }
-        println!("完成: 成功 {} 个, 失败 {} 个", success_count, error_count);
-        if error_count > 0 {
-            Err(anyhow!("部分文件重命名失败"))
-        } else {
-            Ok(())
-        }
-    }
+    // 删除 execute_with_backup 方法（从第147行到第180行）
 
     /// 执行批量重命名
-    fn execute_batch(&self, file_pairs: &[(PathBuf, PathBuf)]) -> Result<()> {
+    fn execute_batch(&self, file_pairs: &[(PathBuf, PathBuf)]) -> HekitResult<()> {
+        let progress = ProgressManager::new(file_pairs.len() as u64, "批量重命名中...");
         let mut success_count = 0;
         let mut error_count = 0;
-        for (old_path, new_path) in file_pairs {
+
+        for (_i, (old_path, new_path)) in file_pairs.iter().enumerate() {
+            progress.set_message(&format!("重命名: {}", old_path.display()));
+
             match self.rename_file(old_path, new_path) {
                 Ok(_) => {
                     println!("✓ {} → {}", old_path.display(), new_path.display());
@@ -196,24 +158,31 @@ impl BatchRenameCore {
                     error_count += 1;
                 }
             }
+
+            progress.inc(1);
         }
-        println!("完成: 成功 {} 个, 失败 {} 个", success_count, error_count);
+
+        progress.finish_with_message(&format!(
+            "完成: 成功 {} 个, 失败 {} 个",
+            success_count, error_count
+        ));
+
         if error_count > 0 {
-            Err(anyhow!("部分文件重命名失败"))
+            hekit_error!(Rename, "部分文件重命名失败")
         } else {
             Ok(())
         }
     }
 
     /// 执行单个文件重命名
-    fn rename_file(&self, old_path: &Path, new_path: &Path) -> Result<()> {
+    fn rename_file(&self, old_path: &Path, new_path: &Path) -> HekitResult<()> {
         if old_path == new_path {
-            return Err(anyhow!("源文件和目标文件路径相同"));
+            return hekit_error!(Rename, "源文件和目标文件路径相同");
         }
 
         if new_path.exists() {
             if self.config.preview {
-                return Err(anyhow!("目标文件已存在: {}", new_path.display()));
+                return hekit_error!(Rename, &format!("目标文件已存在: {}", new_path.display()));
             }
 
             let mut counter = 1;
@@ -232,11 +201,12 @@ impl BatchRenameCore {
             }
 
             fs::rename(old_path, &new_path_with_counter)
-                .map_err(|e| anyhow!("文件重命名失败: {}", e))?;
+                .map_err(|e| HekitError::Rename(format!("文件重命名失败: {}", e)))?;
 
             println!("  自动重命名为: {}", new_path_with_counter.display());
         } else {
-            fs::rename(old_path, new_path).map_err(|e| anyhow!("文件重命名失败: {}", e))?;
+            fs::rename(old_path, new_path)
+                .map_err(|e| HekitError::Rename(format!("文件重命名失败: {}", e)))?;
         }
 
         Ok(())

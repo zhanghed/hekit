@@ -1,5 +1,5 @@
 use crate::utils;
-use anyhow::Result;
+use anyhow::Result; // 移除未使用的 Context 导入
 use std::env;
 
 /// 主应用程序结构体
@@ -77,21 +77,25 @@ impl App {
     /// 运行批量重命名工具
     fn run_batch_rename(&self) -> Result<()> {
         crate::features::rename::interface::run_interactive()
+            .map_err(|e| anyhow::anyhow!("重命名工具执行失败: {}", e))
     }
 
     /// 运行批量搜索工具
     fn run_batch_search(&self) -> Result<()> {
         crate::features::search::interface::run_interactive()
+            .map_err(|e| anyhow::anyhow!("搜索工具执行失败: {}", e))
     }
 
     /// 运行批量压缩工具
     fn run_batch_compress(&self) -> Result<()> {
         crate::features::compress::interface::run_interactive()
+            .map_err(|e| anyhow::anyhow!("压缩工具执行失败: {}", e))
     }
 
     /// 运行批量转换工具 - 新增方法
     fn run_batch_convert(&self) -> Result<()> {
         crate::features::convert::interface::run_interactive()
+            .map_err(|e| anyhow::anyhow!("转换工具执行失败: {}", e))
     }
 
     /// 显示关于信息（包含检查更新）

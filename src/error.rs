@@ -16,6 +16,14 @@ pub enum HekitError {
     UserInput(String),
     /// 系统错误
     System(String),
+    /// 压缩错误
+    Compression(String),
+    /// 重命名错误
+    Rename(String),
+    /// 搜索错误
+    Search(String),
+    /// 转换错误
+    Conversion(String),
     /// 未知错误
     Unknown(String),
 }
@@ -29,12 +37,30 @@ impl fmt::Display for HekitError {
             HekitError::Configuration(msg) => write!(f, "配置错误: {}", msg),
             HekitError::UserInput(msg) => write!(f, "输入错误: {}", msg),
             HekitError::System(msg) => write!(f, "系统错误: {}", msg),
+            HekitError::Compression(msg) => write!(f, "压缩错误: {}", msg),
+            HekitError::Rename(msg) => write!(f, "重命名错误: {}", msg),
+            HekitError::Search(msg) => write!(f, "搜索错误: {}", msg),
+            HekitError::Conversion(msg) => write!(f, "转换错误: {}", msg),
             HekitError::Unknown(msg) => write!(f, "未知错误: {}", msg),
         }
     }
 }
 
 impl std::error::Error for HekitError {}
+
+// 为 anyhow::Error 提供转换
+impl From<anyhow::Error> for HekitError {
+    fn from(error: anyhow::Error) -> Self {
+        HekitError::Unknown(error.to_string())
+    }
+}
+
+// 为 std::io::Error 提供转换
+impl From<std::io::Error> for HekitError {
+    fn from(error: std::io::Error) -> Self {
+        HekitError::FileOperation(error.to_string())
+    }
+}
 
 /// 统一的错误处理函数
 pub fn handle_error(error: &dyn std::error::Error, context: &str) {
@@ -52,6 +78,14 @@ pub fn handle_error(error: &dyn std::error::Error, context: &str) {
         HekitError::UserInput(_) => {
             utils::print_warning(&format!("{}: {}", context, error));
             utils::print_info("请重新输入正确的参数");
+        }
+        HekitError::Compression(_) => {
+            utils::print_error(&format!("{}: {}", context, error));
+            utils::print_info("请检查文件格式和压缩设置");
+        }
+        HekitError::Rename(_) => {
+            utils::print_error(&format!("{}: {}", context, error));
+            utils::print_info("请检查文件名和重命名规则");
         }
         _ => {
             utils::print_error(&format!("{}: {}", context, error));
@@ -80,7 +114,29 @@ fn classify_error(error: &dyn std::error::Error) -> HekitError {
         || error_msg.contains("用户")
     {
         HekitError::UserInput(error.to_string())
+    } else if error_msg.contains("压缩")
+        || error_msg.contains("compress")
+        || error_msg.contains("zip")
+    {
+        HekitError::Compression(error.to_string())
+    } else if error_msg.contains("重命名") || error_msg.contains("rename") {
+        HekitError::Rename(error.to_string())
+    } else if error_msg.contains("搜索") || error_msg.contains("search") {
+        HekitError::Search(error.to_string())
+    } else if error_msg.contains("转换") || error_msg.contains("convert") {
+        HekitError::Conversion(error.to_string())
     } else {
         HekitError::Unknown(error.to_string())
     }
 }
+
+/// 简化的错误处理宏
+#[macro_export]
+macro_rules! hekit_error {
+    ($error_type:ident, $msg:expr) => {
+        Err(crate::error::HekitError::$error_type($msg.to_string()).into())
+    };
+}
+
+/// 结果类型别名，便于使用
+pub type HekitResult<T> = Result<T, HekitError>;

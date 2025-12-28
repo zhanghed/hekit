@@ -1,5 +1,4 @@
-use anyhow::Result;
-
+use crate::error::HekitResult;
 use crate::features::common;
 use crate::features::common::ToolInterface;
 use crate::features::compress::config::BatchCompressConfig;
@@ -38,9 +37,9 @@ impl ToolInterface for CompressTool {
     }
 
     /// 执行压缩命令
-    fn execute_command(input: &str) -> Result<()> {
+    fn execute_command(input: &str) -> anyhow::Result<()> {
         // 使用公共命令执行函数处理参数解析
-        let matches = common::execute_common_command(
+        let matches = common::execute_common_command_hekit(
             input,
             "compress",
             BatchCompressConfig::build_clap_command,
@@ -50,15 +49,25 @@ impl ToolInterface for CompressTool {
         // 创建配置并执行压缩逻辑
         let config = BatchCompressConfig::from_matches(&matches)?;
         let core = BatchCompressCore::new(config);
-        core.execute()
+        core.execute().map_err(|e| anyhow::anyhow!(e.to_string()))
     }
 }
 
 /// 运行交互式压缩界面
-pub fn run_interactive() -> Result<()> {
-    common::run_interactive(
+pub fn run_interactive() -> HekitResult<()> {
+    common::run_interactive_hekit(
         CompressTool::tool_name(),
-        CompressTool::execute_command,
+        |input| {
+            let matches = common::execute_common_command_hekit(
+                input,
+                "compress",
+                BatchCompressConfig::build_clap_command,
+                CompressTool::show_usage,
+            )?;
+            let config = BatchCompressConfig::from_matches(&matches)?;
+            let core = BatchCompressCore::new(config);
+            core.execute()
+        },
         || {
             CompressTool::show_usage();
         },

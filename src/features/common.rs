@@ -1,5 +1,5 @@
 //! 公共工具接口模块 - 提供统一的工具接口和通用功能
-use crate::error::handle_error;
+use crate::error::{handle_error, HekitError, HekitResult};
 use crate::utils;
 use anyhow::{anyhow, Result};
 use clap::error::ErrorKind;
@@ -17,13 +17,56 @@ pub trait ToolInterface {
     fn execute_command(input: &str) -> Result<()>;
 }
 
-/// 通用的交互式运行函数
-/// # 参数
-/// - `tool_name`: 工具名称，用于界面显示
-/// - `execute_fn`: 命令执行函数
-/// - `show_usage_fn`: 显示使用说明的函数
+/// 通用的交互式运行函数（支持 HekitResult）
+pub fn run_interactive_hekit<F, G>(
+    tool_name: &str,
+    execute_fn: F,
+    show_usage_fn: G,
+) -> HekitResult<()>
+where
+    F: Fn(&str) -> HekitResult<()>,
+    G: Fn(),
+{
+    utils::print_chapter_title(&format!("{}", tool_name));
+    println!("输入 help 查看详细说明，back 返回上一级");
 
-/// 通用的交互式运行函数（改进版）
+    loop {
+        let input = utils::get_user_input("请输入命令: ")?;
+        let trimmed_input = input.trim();
+
+        match trimmed_input {
+            "back" => {
+                println!("返回主菜单");
+                break;
+            }
+            "help" => {
+                show_usage_fn();
+            }
+            "" => continue,
+            _ => {
+                // 检查是否为单个字母（可能是误输入）
+                if trimmed_input.len() == 1 && trimmed_input.chars().all(|c| c.is_alphabetic()) {
+                    utils::print_warning("检测到单字母输入，可能是误操作");
+                    utils::print_info("请输入完整的命令参数，如 '-n \"*.txt\"'");
+                    utils::print_info("输入 'help' 查看详细使用说明");
+                    continue;
+                }
+
+                match execute_fn(trimmed_input) {
+                    Ok(_) => {
+                        utils::print_success("命令执行完成");
+                    }
+                    Err(e) => {
+                        handle_error(&e, "命令执行失败");
+                    }
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
+/// 通用的交互式运行函数（支持 anyhow::Result）
 pub fn run_interactive<F, G>(tool_name: &str, execute_fn: F, show_usage_fn: G) -> Result<()>
 where
     F: Fn(&str) -> Result<()>,
@@ -59,7 +102,6 @@ where
                         utils::print_success("命令执行完成");
                     }
                     Err(e) => {
-                        // 将 anyhow::Error 转换为 &dyn std::error::Error
                         handle_error(e.as_ref(), "命令执行失败");
                     }
                 }
@@ -69,7 +111,62 @@ where
     Ok(())
 }
 
-/// 通用的命令执行函数（改进版）
+/// 通用的命令执行函数（支持 HekitResult）
+pub fn execute_common_command_hekit<F>(
+    input: &str,
+    command_prefix: &str,
+    build_command: F,
+    show_usage_fn: fn(),
+) -> HekitResult<clap::ArgMatches>
+where
+    F: Fn() -> clap::Command,
+{
+    // 处理help命令
+    if input.trim() == "help" {
+        show_usage_fn();
+        return Ok(clap::ArgMatches::default());
+    }
+
+    // 检查是否为单个字母（可能是误输入）
+    let trimmed_input = input.trim();
+    if trimmed_input.len() == 1 && trimmed_input.chars().all(|c| c.is_alphabetic()) {
+        return Err(HekitError::UserInput(
+            "单字母输入，显示使用说明".to_string(),
+        ));
+    }
+
+    // 预处理Windows路径
+    let preprocessed_input = preprocess_windows_paths(input);
+
+    // 解析命令行参数
+    let full_command = format!("{} {}", command_prefix, preprocessed_input);
+    let args = match split(&full_command) {
+        Some(args) => args,
+        None => return Err(HekitError::ArgumentParse("命令行参数解析失败".to_string())),
+    };
+
+    // 执行命令并处理结果
+    match build_command().try_get_matches_from(&args) {
+        Ok(matches) => Ok(matches),
+        Err(e) => match e.kind() {
+            ErrorKind::DisplayHelp => {
+                show_usage_fn();
+                Ok(clap::ArgMatches::default())
+            }
+            ErrorKind::DisplayVersion => {
+                utils::print_info(&format!("{} v1.0.0", command_prefix));
+                Ok(clap::ArgMatches::default())
+            }
+            _ => {
+                // 使用统一的错误处理
+                handle_error(&e, "参数解析失败");
+                Err(HekitError::ArgumentParse(e.to_string()))
+            }
+        },
+    }
+}
+
+/// 通用的命令执行函数（支持 anyhow::Result）
 pub fn execute_common_command<F>(
     input: &str,
     command_prefix: &str,
