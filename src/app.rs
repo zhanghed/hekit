@@ -101,8 +101,8 @@ impl App {
         println!("版本: {}", env!("CARGO_PKG_VERSION"));
         println!("作者: zhanghed");
 
-        println!("项目地址: {}", "https://github.com/zhanghed/hekit");
-        println!("下载地址: {}", "https://github.com/zhanghed/hekit/releases");
+        println!("项目地址: {}", "https://gitee.com/zhanghed/hekit");
+        println!("下载地址: {}", "https://gitee.com/zhanghed/hekit/releases");
 
         // 检查更新但不主动跳转
         println!("检查更新中...");

@@ -1,4 +1,5 @@
 //! 公共工具接口模块 - 提供统一的工具接口和通用功能
+use crate::error::handle_error;
 use crate::utils;
 use anyhow::{anyhow, Result};
 use clap::error::ErrorKind;
@@ -21,6 +22,8 @@ pub trait ToolInterface {
 /// - `tool_name`: 工具名称，用于界面显示
 /// - `execute_fn`: 命令执行函数
 /// - `show_usage_fn`: 显示使用说明的函数
+
+/// 通用的交互式运行函数（改进版）
 pub fn run_interactive<F, G>(tool_name: &str, execute_fn: F, show_usage_fn: G) -> Result<()>
 where
     F: Fn(&str) -> Result<()>,
@@ -41,31 +44,23 @@ where
             "help" => {
                 show_usage_fn();
             }
-            "" => continue, // 空输入，继续循环
+            "" => continue,
             _ => {
                 // 检查是否为单个字母（可能是误输入）
                 if trimmed_input.len() == 1 && trimmed_input.chars().all(|c| c.is_alphabetic()) {
-                    println!("提示: 请输入完整的命令参数，如 '-n \"*.txt\"'");
-                    println!("      输入 'help' 查看详细使用说明");
+                    utils::print_warning("检测到单字母输入，可能是误操作");
+                    utils::print_info("请输入完整的命令参数，如 '-n \"*.txt\"'");
+                    utils::print_info("输入 'help' 查看详细使用说明");
                     continue;
                 }
 
                 match execute_fn(trimmed_input) {
                     Ok(_) => {
-                        println!("命令执行完成");
+                        utils::print_success("命令执行完成");
                     }
                     Err(e) => {
-                        let error_msg = e.to_string();
-                        if error_msg == "显示帮助信息" || error_msg == "显示版本信息" {
-                            // 帮助信息和版本信息不是真正的错误
-                        } else if error_msg.contains("参数解析失败") {
-                            // 参数解析错误已经在execute_common_command中显示过详细信息
-                            println!("命令执行失败: 参数格式错误");
-                            println!("请输入 'help' 查看正确的命令格式");
-                        } else {
-                            // 其他错误显示一次错误信息
-                            println!("命令执行失败: {e}");
-                        }
+                        // 将 anyhow::Error 转换为 &dyn std::error::Error
+                        handle_error(e.as_ref(), "命令执行失败");
                     }
                 }
             }
@@ -74,12 +69,7 @@ where
     Ok(())
 }
 
-/// 通用的命令执行函数 - 处理命令行参数解析和错误处理
-/// # 参数
-/// - `input`: 用户输入的命令行字符串
-/// - `command_prefix`: 命令前缀（如"compress"、"rename"）
-/// - `build_command`: 构建CLAP命令的函数
-/// - `show_usage_fn`: 显示使用说明的函数
+/// 通用的命令执行函数（改进版）
 pub fn execute_common_command<F>(
     input: &str,
     command_prefix: &str,
@@ -92,7 +82,7 @@ where
     // 处理help命令
     if input.trim() == "help" {
         show_usage_fn();
-        return Ok(clap::ArgMatches::default()); // 返回空的匹配结果，表示正常显示帮助
+        return Ok(clap::ArgMatches::default());
     }
 
     // 检查是否为单个字母（可能是误输入）
@@ -101,7 +91,7 @@ where
         return Err(anyhow!("单字母输入，显示使用说明"));
     }
 
-    // 预处理Windows路径 - 修复单反斜杠问题
+    // 预处理Windows路径
     let preprocessed_input = preprocess_windows_paths(input);
 
     // 解析命令行参数
@@ -117,16 +107,15 @@ where
         Err(e) => match e.kind() {
             ErrorKind::DisplayHelp => {
                 show_usage_fn();
-                Ok(clap::ArgMatches::default()) // 返回空的匹配结果，表示正常显示帮助
+                Ok(clap::ArgMatches::default())
             }
             ErrorKind::DisplayVersion => {
                 utils::print_info(&format!("{} v1.0.0", command_prefix));
-                Ok(clap::ArgMatches::default()) // 返回空的匹配结果，表示正常显示版本
+                Ok(clap::ArgMatches::default())
             }
             _ => {
-                // 提供更详细的错误信息，但只显示一次
-                println!("详细错误信息: {}", e);
-                println!("请检查参数格式是否正确，特别是路径参数");
+                // 使用统一的错误处理
+                handle_error(&e, "参数解析失败");
                 Err(anyhow!("参数解析失败"))
             }
         },
