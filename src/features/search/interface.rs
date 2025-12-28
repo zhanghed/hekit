@@ -18,24 +18,22 @@ impl ToolInterface for SearchTool {
     fn show_usage() {
         use crate::utils;
 
-        utils::print_title("批量搜索工具 - 使用说明");
+        utils::print_separator();
+        println!("{:^30}", "批量搜索工具");
         utils::print_separator();
 
-        utils::print_info("参数说明:");
-        println!("  -d, --path <搜索路径>     搜索路径（默认当前目录） 示例: -d \"C:\\\"");
-        println!("  -n, --name <文件名模式>   文件名匹配模式（支持通配符 *） 示例: -n \"*.jpg\"");
-        println!("  -t, --type <文件类型>     按文件类型筛选 示例: -t \"txt\"");
-        println!("  --min-size <最小大小>     最小文件大小（字节） 示例: --min-size 1048576");
-        println!("  --max-size <最大大小>     最大文件大小（字节） 示例: --max-size 5242880");
-        println!("  -r, --recursive           递归搜索子目录 示例: -r");
-        println!("  -c, --case                不区分大小写匹配 示例: -c");
+        println!("参数说明:");
+        println!("  -d, --path <搜索路径>     搜索路径（默认当前目录）");
+        println!("  -n, --name <文件名模式>   文件名匹配模式（支持通配符 *）");
+        println!("  -t, --type <文件类型>     按文件类型筛选");
+        println!("  --min-size <最小大小>     最小文件大小（字节）");
+        println!("  --max-size <最大大小>     最大文件大小（字节）");
+        println!("  -r, --recursive           递归搜索子目录");
+        println!("  -c, --case                不区分大小写匹配");
 
-        utils::print_separator();
-        utils::print_info("实用示例:");
-        utils::print_success("搜索C盘根目录下所有jpg文件，递归搜索子目录");
-        println!("  命令: -d \"C:\\\" -n \"*.jpg\" -r");
-        utils::print_success("搜索当前目录下大于1MB的PDF文件");
-        println!("  命令: -n \"*.pdf\" --min-size 1048576");
+        println!("实用示例:");
+        println!("  搜索jpg文件: -d \"C:\\\" -n \"*.jpg\" -r");
+        println!("  搜索大文件: -n \"*.pdf\" --min-size 1048576");
         utils::print_separator();
     }
 

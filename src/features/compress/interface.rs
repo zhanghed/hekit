@@ -16,22 +16,25 @@ impl ToolInterface for CompressTool {
 
     /// 显示使用说明
     fn show_usage() {
-        println!("批量压缩工具");
+        use crate::utils;
+
+        utils::print_separator();
+        println!("{:^30}", "批量压缩工具");
+        utils::print_separator();
+
         println!("参数说明:");
-        println!(
-            "  -d, --path <目标文件夹>    目标文件夹（默认当前目录） 示例: -d \"F:\\documents\""
-        );
-        println!("  -m, --match <文件模式>     选文件（通配符 *） 示例: -m \"*.jpg\"");
-        println!("  -f, --format <压缩格式>    压缩格式（zip, tar.gz, tar.bz2） 示例: -f zip");
-        println!("  -o, --output <输出路径>    输出文件路径（默认同目录） 示例: -o \"F:\\backup\"");
-        println!("  -l, --level <压缩级别>     压缩级别 1-9（默认6） 示例: -l 9");
-        println!("  -r, --recursive           递归处理子目录 示例: -r");
-        println!("  -p, --preview             预览效果（不真压缩） 示例: -p");
+        println!("  -d, --path <目标文件夹>    目标文件夹（默认当前目录）");
+        println!("  -m, --match <文件模式>     选文件（通配符 *）");
+        println!("  -f, --format <压缩格式>    压缩格式（zip, tar.gz, tar.bz2）");
+        println!("  -o, --output <输出路径>    输出文件路径（默认同目录）");
+        println!("  -l, --level <压缩级别>     压缩级别 1-9（默认6）");
+        println!("  -r, --recursive           递归处理子目录");
+        println!("  -p, --preview             预览效果（不真压缩）");
+
         println!("实用示例:");
-        println!("  压缩F:\\photos目录下所有jpg图片为zip格式，最高压缩级别");
-        println!("    -d \"F:\\photos\" -m \"*.jpg\" -f zip -l 9");
-        println!("  预览当前目录下所有txt文件的压缩效果");
-        println!("    -m \"*.txt\" -p");
+        println!("  压缩图片: -d \"F:\\photos\" -m \"*.jpg\" -f zip -l 9");
+        println!("  预览效果: -m \"*.txt\" -p");
+        utils::print_separator();
     }
 
     /// 执行压缩命令

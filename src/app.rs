@@ -96,12 +96,13 @@ impl App {
 
     /// 显示关于信息（包含检查更新）
     fn show_about_info(&self) -> Result<()> {
+        utils::print_separator();
         utils::print_chapter_title("HEKIT - 关于");
         println!("版本: {}", env!("CARGO_PKG_VERSION"));
         println!("作者: zhanghed");
-        println!("项目地址: https://github.com/zhanghed/hekit");
-        println!("下载地址: https://gitee.com/zhanghed/hekit/releases");
-        utils::print_simple_separator();
+
+        println!("项目地址: {}", "https://github.com/zhanghed/hekit");
+        println!("下载地址: {}", "https://github.com/zhanghed/hekit/releases");
 
         // 检查更新但不主动跳转
         println!("检查更新中...");
@@ -117,18 +118,23 @@ impl App {
         } else {
             println!("检查更新失败");
         }
+        utils::print_separator();
         Ok(())
     }
 
-    /// 显示主菜单
+    /// 显示主菜单（一排显示）
     fn show_main_menu() {
-        // 使用简洁的章节标题
-        utils::print_chapter_title("HEKIT - 主菜单");
-        utils::print_menu_item("1", "批量重命名工具");
-        utils::print_menu_item("2", "批量搜索工具");
-        utils::print_menu_item("3", "批量压缩工具");
-        utils::print_menu_item("4", "批量转换工具"); // 添加转换工具菜单项
+        utils::print_separator();
+        println!("{:^30}", "HEKIT - 主菜单");
+        utils::print_separator();
+
+        // 一排显示所有菜单项
+        utils::print_menu_item("1", "批量重命名");
+        utils::print_menu_item("2", "批量搜索");
+        utils::print_menu_item("3", "批量压缩");
+        utils::print_menu_item("4", "批量转换");
         utils::print_menu_item("0", "关于HEKIT");
+
         utils::print_separator();
     }
 }

@@ -31,18 +31,26 @@ where
 
     loop {
         let input = utils::get_user_input("请输入命令: ")?;
-        match input.as_str() {
+        let trimmed_input = input.trim();
+
+        match trimmed_input {
             "back" => {
                 println!("返回主菜单");
                 break;
             }
             "help" => {
                 show_usage_fn();
-                // 移除空行，使用空格分隔
             }
             "" => continue, // 空输入，继续循环
             _ => {
-                match execute_fn(&input) {
+                // 检查是否为单个字母（可能是误输入）
+                if trimmed_input.len() == 1 && trimmed_input.chars().all(|c| c.is_alphabetic()) {
+                    println!("提示: 请输入完整的命令参数，如 '-n \"*.txt\"'");
+                    println!("      输入 'help' 查看详细使用说明");
+                    continue;
+                }
+
+                match execute_fn(trimmed_input) {
                     Ok(_) => {
                         println!("命令执行完成");
                     }
@@ -85,6 +93,12 @@ where
     if input.trim() == "help" {
         show_usage_fn();
         return Ok(clap::ArgMatches::default()); // 返回空的匹配结果，表示正常显示帮助
+    }
+
+    // 检查是否为单个字母（可能是误输入）
+    let trimmed_input = input.trim();
+    if trimmed_input.len() == 1 && trimmed_input.chars().all(|c| c.is_alphabetic()) {
+        return Err(anyhow!("单字母输入，显示使用说明"));
     }
 
     // 预处理Windows路径 - 修复单反斜杠问题
