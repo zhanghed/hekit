@@ -5,6 +5,7 @@ use std::path::{Path, PathBuf};
 
 use super::config::BatchConvertConfig;
 use crate::utils;
+use image::ImageFormat;
 
 /// 批量转换核心逻辑
 pub struct BatchConvertCore {
@@ -172,20 +173,81 @@ impl BatchConvertCore {
     }
 
     /// 图片格式转换（占位实现）
+    /// 图片格式转换（实际实现）
     fn convert_image(&self, source: &Path, target: &Path) -> Result<()> {
-        // 实际项目中应该使用图像处理库如 image-rs
-        // 这里先实现简单的文件复制，后续可以添加真正的图像转换
-        println!("图片格式转换: {} -> {}", source.display(), target.display());
-        fs::copy(source, target)?;
+        let _source_format = self.config.source_format.to_lowercase(); // 添加下划线前缀
+        let target_format = self.config.target_format.to_lowercase();
+
+        // 获取图像格式枚举
+        let target_image_format = match target_format.as_str() {
+            "jpg" | "jpeg" => ImageFormat::Jpeg,
+            "png" => ImageFormat::Png,
+            "webp" => ImageFormat::WebP,
+            "bmp" => ImageFormat::Bmp,
+            "gif" => ImageFormat::Gif,
+            _ => {
+                // 不支持的格式，使用默认复制
+                fs::copy(source, target)?;
+                return Ok(());
+            }
+        };
+
+        // 打开并转换图像
+        let img = image::open(source)
+            .map_err(|e| anyhow!("无法打开图像文件 {}: {}", source.display(), e))?;
+
+        // 根据质量设置调整图像
+        let mut output_img = img;
+        if let Some(quality) = self.config.quality {
+            // 简单的质量调整（实际项目中可以更复杂）
+            if quality < 80 {
+                output_img = output_img.resize(
+                    output_img.width() * quality as u32 / 100,
+                    output_img.height() * quality as u32 / 100,
+                    image::imageops::FilterType::Lanczos3,
+                );
+            }
+        }
+
+        // 保存图像
+        output_img
+            .save_with_format(target, target_image_format)
+            .map_err(|e| anyhow!("无法保存图像文件 {}: {}", target.display(), e))?;
+        println!(
+            "✓ 图片转换完成: {} -> {}",
+            source.display(),
+            target.display()
+        );
         Ok(())
     }
 
-    /// PDF转文本（占位实现）
+    /// PDF转文本（改进实现）
     fn convert_pdf_to_text(&self, source: &Path, target: &Path) -> Result<()> {
-        // 实际项目中应该使用PDF处理库
-        // 这里先创建占位文本文件
-        println!("PDF转文本: {} -> {}", source.display(), target.display());
-        fs::write(target, "PDF转文本功能待实现\n源文件已复制")?;
+        // 检查文件是否为PDF
+        if let Some(ext) = source.extension() {
+            if ext.to_string_lossy().to_lowercase() != "pdf" {
+                return Err(anyhow!("源文件不是PDF格式"));
+            }
+        }
+
+        // 创建包含基本信息的文本文件
+        let metadata = fs::metadata(source)?;
+        let file_size = metadata.len();
+        let modified = metadata.modified()?;
+
+        let content = format!(
+            "PDF文件: {}\n文件大小: {} 字节\n修改时间: {:?}\n\nPDF转文本功能需要额外的PDF处理库支持。\n建议使用专门的PDF工具进行转换。",
+            source.display(),
+            file_size,
+            modified
+        );
+
+        fs::write(target, content)?;
+        println!(
+            "✓ PDF信息提取完成: {} -> {}",
+            source.display(),
+            target.display()
+        );
         Ok(())
     }
 }

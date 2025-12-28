@@ -1,5 +1,6 @@
 use super::config::{BatchCleanConfig, CleanMode};
 use crate::error::HekitError;
+use chrono::{DateTime, Local};
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -237,10 +238,72 @@ impl BatchCleanCore {
             .map_err(|e| HekitError::FileOperation(format!("删除文件失败: {:?} - {}", path, e)))
     }
 
-    /// 备份文件
+    /// 备份文件（完整实现）
     fn backup_files(&self) -> Result<(), HekitError> {
-        // 简化备份实现
-        println!("备份功能暂未实现");
+        if self.files_to_clean.is_empty() && self.folders_to_clean.is_empty() {
+            return Ok(());
+        }
+
+        let timestamp: DateTime<Local> = Local::now();
+        let backup_dir_name = format!("hekit_backup_{}", timestamp.format("%Y%m%d_%H%M%S"));
+        let backup_dir = self.config.target_dir.join(backup_dir_name);
+
+        // 创建备份目录
+        fs::create_dir_all(&backup_dir)
+            .map_err(|e| HekitError::FileOperation(format!("创建备份目录失败: {}", e)))?;
+
+        let mut backed_up_count = 0;
+
+        // 备份文件
+        for file_path in &self.files_to_clean {
+            if let Some(file_name) = file_path.file_name() {
+                let backup_path = backup_dir.join(file_name);
+
+                // 处理重名文件
+                let mut final_backup_path = backup_path.clone();
+                let mut counter = 1;
+                while final_backup_path.exists() {
+                    let stem = backup_path.file_stem().unwrap_or_default();
+                    let ext = backup_path.extension().unwrap_or_default();
+                    final_backup_path = backup_path.with_file_name(format!(
+                        "{}_{}.{}",
+                        stem.to_string_lossy(),
+                        counter,
+                        ext.to_string_lossy()
+                    ));
+                    counter += 1;
+                }
+
+                fs::copy(file_path, &final_backup_path).map_err(|e| {
+                    HekitError::FileOperation(format!(
+                        "备份文件失败: {} -> {}",
+                        file_path.display(),
+                        e
+                    ))
+                })?;
+                backed_up_count += 1;
+            }
+        }
+
+        // 备份空文件夹结构信息
+        if !self.folders_to_clean.is_empty() {
+            let folder_info_path = backup_dir.join("deleted_folders.txt");
+            let mut folder_info = String::new();
+            folder_info.push_str("被删除的空文件夹列表:\n");
+
+            for folder_path in &self.folders_to_clean {
+                folder_info.push_str(&format!("- {}\n", folder_path.display()));
+            }
+
+            fs::write(folder_info_path, folder_info)
+                .map_err(|e| HekitError::FileOperation(format!("写入文件夹信息失败: {}", e)))?;
+        }
+
+        println!(
+            "✓ 备份完成: {}个文件已备份到 {}",
+            backed_up_count,
+            backup_dir.display()
+        );
         Ok(())
     }
 
