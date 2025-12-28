@@ -23,7 +23,6 @@ impl App {
 
     /// 运行交互式模式 - 显示主菜单并处理用户选择
     pub fn run_interactive_mode(&self) -> Result<()> {
-        // 显示程序标题
         Self::show_program_title();
 
         loop {
@@ -35,6 +34,7 @@ impl App {
                     continue;
                 }
             };
+
             match choice.as_str() {
                 "1" => {
                     println!("进入批量重命名工具");
@@ -49,9 +49,12 @@ impl App {
                     self.run_batch_compress()?;
                 }
                 "4" => {
-                    // 添加转换工具选项
                     println!("进入批量转换工具");
                     self.run_batch_convert()?;
+                }
+                "5" => {
+                    println!("进入批量清理工具");
+                    self.run_batch_clean()?;
                 }
                 "0" => {
                     self.show_about_info()?;
@@ -60,14 +63,13 @@ impl App {
                     println!("无效的选择，请重新输入");
                 }
             }
-            // 移除空行，使用空格分隔
         }
     }
 
     /// 显示程序标题
     fn show_program_title() {
         // 使用简洁标题设计（显示名称和简介，正常显示）
-        utils::print_large_simple_title("HEKIT", "一个简单实用的命令行工具集合");
+        utils::print_large_simple_title("HEKIT", "      一个简单实用的命令行工具集合");
     }
 
     /// 运行批量重命名工具
@@ -92,6 +94,12 @@ impl App {
     fn run_batch_convert(&self) -> Result<()> {
         crate::features::convert::interface::run_interactive()
             .map_err(|e| anyhow::anyhow!("转换工具执行失败: {}", e))
+    }
+
+    /// 运行批量清理工具 - 新增方法
+    fn run_batch_clean(&self) -> Result<()> {
+        crate::features::clean::interface::run_interactive()
+            .map_err(|e| anyhow::anyhow!("清理工具执行失败: {}", e))
     }
 
     /// 显示关于信息（包含检查更新）
@@ -122,19 +130,34 @@ impl App {
         Ok(())
     }
 
-    /// 显示主菜单（一排显示）
+    /// 显示主菜单（单列显示，每项间隔空行）
     fn show_main_menu() {
         utils::print_separator();
-        println!("{:^30}", "HEKIT - 主菜单");
+        println!("HEKIT - 主菜单"); // 取消居中显示，改为左对齐
         utils::print_separator();
+        println!(); // 添加空行
 
-        // 一排显示所有菜单项
-        utils::print_menu_item("1", "批量重命名");
-        utils::print_menu_item("2", "批量搜索");
-        utils::print_menu_item("3", "批量压缩");
-        utils::print_menu_item("4", "批量转换");
-        utils::print_menu_item("0", "关于HEKIT");
+        // 菜单项数据
+        let menu_items = vec![
+            ("1", "批量重命名"),
+            ("2", "批量搜索"),
+            ("3", "批量压缩"),
+            ("4", "批量转换"),
+            ("5", "批量清理"),
+            ("0", "关于"),
+        ];
 
+        // 单列显示，每项一行，项之间添加空行
+        for (i, (num, text)) in menu_items.iter().enumerate() {
+            println!("      {:>2}. {}", num, text);
+
+            // 在每项后添加空行（除了最后一项）
+            if i < menu_items.len() - 1 {
+                println!();
+            }
+        }
+
+        println!(); // 添加空行
         utils::print_separator();
     }
 }

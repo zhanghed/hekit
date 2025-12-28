@@ -19,7 +19,7 @@ impl ToolInterface for SearchTool {
         use crate::utils;
 
         utils::print_separator();
-        println!("{:^30}", "批量搜索工具");
+        println!("{}", "批量搜索工具");
         utils::print_separator();
 
         println!("参数说明:");
@@ -39,7 +39,6 @@ impl ToolInterface for SearchTool {
 
     /// 执行命令
     fn execute_command(input: &str) -> Result<()> {
-        // 检查输入是否为空
         if input.trim().is_empty() {
             Self::show_usage();
             return Ok(());
@@ -52,24 +51,16 @@ impl ToolInterface for SearchTool {
             Self::show_usage,
         )?;
 
-        // 方法1：检查是否显示了帮助信息（通过检查输入是否为"help"）
         if input.trim() == "help" {
             return Ok(());
         }
 
-        // 方法2：检查是否有任何参数被设置
         if !matches.contains_id("path") && !matches.contains_id("name") {
-            // 如果没有设置主要参数，可能是显示了帮助信息
             return Ok(());
         }
 
-        // 具体处理逻辑
         let config = BatchSearchConfig::from_matches(&matches)?;
-
-        // 显示搜索进度提示
         println!("高性能搜索工具启动");
-
-        // 核心函数已经处理了所有显示逻辑，这里直接调用即可
         let _ = BatchSearchCore::search_files(&config)?;
 
         Ok(())

@@ -18,7 +18,7 @@ impl ToolInterface for RenameTool {
         use crate::utils;
 
         utils::print_separator();
-        println!("{:^30}", "批量重命名工具");
+        println!("{}", "批量重命名工具");
         utils::print_separator();
 
         println!("参数说明:");
@@ -47,7 +47,6 @@ impl ToolInterface for RenameTool {
             Self::show_usage,
         )?;
 
-        // 具体处理逻辑
         let config = BatchRenameConfig::from_matches(&matches)?;
         let core = BatchRenameCore::new(config);
         core.execute().map_err(|e| anyhow::anyhow!(e.to_string()))

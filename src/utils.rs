@@ -36,9 +36,10 @@ pub fn print_title(msg: &str) {
     println!("{}", msg);
 }
 
-/// 打印菜单项
+/// 打印菜单项（带行间距）
 pub fn print_menu_item(number: &str, description: &str) {
     println!("  {:>2}  {}", number, description);
+    println!(); // 添加空行增加行间距
 }
 
 /// 打印分隔线
@@ -110,10 +111,10 @@ pub fn print_fancy_program_title(name: &str, version: &str, description: &str) {
     println!();
     println!("{}", top_border);
     println!("{}", empty_line);
-    println!("║{:^width$}║", title, width = max_width - 2);
+    println!("║{:width$}║", title, width = max_width - 2);
     println!("{}", empty_line);
     if !description.is_empty() {
-        println!("║{:^width$}║", description, width = max_width - 2);
+        println!("║{:width$}║", description, width = max_width - 2);
         println!("{}", empty_line);
     }
     println!("{}", bottom_border);

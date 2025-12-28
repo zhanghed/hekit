@@ -18,7 +18,7 @@ impl ToolInterface for CompressTool {
         use crate::utils;
 
         utils::print_separator();
-        println!("{:^30}", "批量压缩工具");
+        println!("{}", "批量压缩工具"); // 取消居中：{:^30} -> {}
         utils::print_separator();
 
         println!("参数说明:");

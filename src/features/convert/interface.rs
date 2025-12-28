@@ -19,7 +19,7 @@ impl ToolInterface for ConvertTool {
         use crate::utils;
 
         utils::print_separator();
-        println!("{:^30}", "批量转换工具");
+        println!("{}", "批量转换工具"); // 取消居中：{:^30} -> {}
         utils::print_separator();
 
         println!("参数说明:");
