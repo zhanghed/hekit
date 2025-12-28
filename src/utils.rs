@@ -120,20 +120,38 @@ pub fn print_fancy_program_title(name: &str, version: &str, description: &str) {
     println!();
 }
 
-/// 打印现代化的程序标题（简洁风格）
-pub fn print_modern_program_title(name: &str, version: &str, description: &str) {
-    let title = format!("✨ {} v{} ✨", name, version);
-    let max_width = title.len().max(description.len()) + 4;
-    let separator = "─".repeat(max_width);
+/// 打印现代简约程序标题（无符号装饰，不显示版本号）
+pub fn print_modern_minimal_program_title(name: &str, description: &str) {
+    println!();
+    println!("{}", name);
+    println!("{}", "─".repeat(name.len()));
+
+    if !description.is_empty() {
+        println!("{}", description);
+    }
 
     println!();
-    println!("┌{}┐", separator);
-    println!("│{:^width$}│", title, width = max_width);
+}
+
+/// 打印极简大字号程序标题（无分割线，不显示版本号）
+pub fn print_large_program_title(name: &str, description: &str) {
+    println!();
+    println!("{}", name.to_uppercase());
+
     if !description.is_empty() {
-        println!("│{:^width$}│", "", width = max_width);
-        println!("│{:^width$}│", description, width = max_width);
+        println!("{}", description);
     }
-    println!("└{}┘", separator);
+
+    println!();
+}
+
+/// 打印简洁大号程序标题（只显示名称，无描述，使用ANSI转义码放大效果）
+pub fn print_large_simple_title(name: &str, description: &str) {
+    println!();
+    println!("{}", name);
+    if !description.is_empty() {
+        println!("{}", description);
+    }
     println!();
 }
 
@@ -192,4 +210,35 @@ pub fn print_terminal_info() {
     } else {
         println!("(当前终端不支持可点击链接，请复制链接到浏览器打开)");
     }
+}
+
+/// 打印增强版简洁程序标题（不显示版本号，明显醒目，兼容性好）
+pub fn print_enhanced_program_title(name: &str, description: &str) {
+    let title = format!("{}", name);
+    let separator = "=".repeat(title.len() + 4);
+
+    println!();
+    println!("{}", separator);
+    println!("  {}  ", title);
+    println!("{}", separator);
+
+    if !description.is_empty() {
+        println!("  {}  ", description);
+        println!("{}", "=".repeat(description.len() + 4));
+    }
+
+    println!();
+}
+
+/// 打印现代简约程序标题（无边框，简洁优雅）
+pub fn print_clean_program_title(name: &str, description: &str) {
+    println!();
+    println!("{}", name);
+    println!("{}", "─".repeat(name.len()));
+
+    if !description.is_empty() {
+        println!("{}", description);
+    }
+
+    println!();
 }

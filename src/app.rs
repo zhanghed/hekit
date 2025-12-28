@@ -66,12 +66,8 @@ impl App {
 
     /// 显示程序标题
     fn show_program_title() {
-        // 使用极简的标题设计
-        utils::print_simple_program_title(
-            "HEKIT",
-            env!("CARGO_PKG_VERSION"),
-            "一个简单实用的命令行工具集合",
-        );
+        // 使用简洁标题设计（显示名称和简介，正常显示）
+        utils::print_large_simple_title("HEKIT", "一个简单实用的命令行工具集合");
     }
 
     /// 运行批量重命名工具
