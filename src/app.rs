@@ -56,6 +56,10 @@ impl App {
                     println!("进入批量清理工具");
                     self.run_batch_clean()?;
                 }
+                "6" => {
+                    println!("进入系统信息工具");
+                    self.run_sysinfo()?;
+                }
                 "0" => {
                     self.show_about_info()?;
                 }
@@ -69,7 +73,7 @@ impl App {
     /// 显示程序标题
     fn show_program_title() {
         // 使用简洁标题设计（显示名称和简介，正常显示）
-        utils::print_large_simple_title("HEKIT", "      一个简单实用的命令行工具集合");
+        utils::print_large_simple_title("HEKIT", "      一个工具集合");
     }
 
     /// 运行批量重命名工具
@@ -100,6 +104,11 @@ impl App {
     fn run_batch_clean(&self) -> Result<()> {
         crate::features::clean::interface::run_interactive()
             .map_err(|e| anyhow::anyhow!("清理工具执行失败: {}", e))
+    }
+    /// 运行系统信息工具
+    fn run_sysinfo(&self) -> Result<()> {
+        crate::features::sysinfo::interface::run_interactive()
+            .map_err(|e| anyhow::anyhow!("系统信息工具执行失败: {}", e))
     }
 
     /// 显示关于信息（包含检查更新）
@@ -144,7 +153,8 @@ impl App {
             ("3", "批量压缩"),
             ("4", "批量转换"),
             ("5", "批量清理"),
-            ("0", "关于"),
+            ("6", "系统信息工具"),
+            ("0", "关于 HEKIT"),
         ];
 
         // 单列显示，每项一行，项之间添加空行

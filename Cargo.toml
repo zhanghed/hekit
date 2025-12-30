@@ -2,7 +2,7 @@
 name = "hekit"
 version = "1.2.0"
 authors = ["zhanghed"]
-description = "一个简单实用的命令行工具集合"
+description = "一个工具集合"
 homepage = "https://gitee.com/zhanghed/hekit"
 edition = "2021"
 
@@ -21,6 +21,9 @@ winapi = { version = "0.3", features = ["wincon", "winuser"] }
 indicatif = "0.17"
 chrono = { version = "0.4", features = ["serde"] }
 image = "0.24"
+sysinfo = "0.29"
+socket2 = "0.5"
+hostname = "0.3"
 
 [package.metadata.winres]
 icon = "src/assets/hekit.ico"
