@@ -40,8 +40,14 @@ hekit/
     ├── progress.rs                    # 进度条显示功能
     ├── assets/hekit.ico               # 应用程序图标
     └── features/
+        ├── mod.rs                     # 功能模块导出
         ├── common.rs                  # 公共工具接口（ToolInterface trait定义）
-        └── mod.rs                     # 功能模块导出
+        ├── clean/                     # 清理功能模块
+        ├── compress/                   # 压缩功能模块
+        ├── convert/                    # 转换功能模块
+        ├── rename/                     # 重命名功能模块
+        ├── search/                     # 搜索功能模块
+        └── sysinfo/                    # 系统信息功能模块
 ```
 
 
