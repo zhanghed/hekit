@@ -1,7 +1,7 @@
 //! 公共工具接口模块 - 提供统一的工具接口和通用功能
 use crate::error::{handle_error, HekitError, HekitResult};
 use crate::utils;
-use anyhow::{anyhow, Result};
+use anyhow::anyhow;
 use clap::error::ErrorKind;
 use shlex::split;
 
@@ -14,7 +14,7 @@ pub trait ToolInterface {
     fn show_usage();
 
     /// 执行命令 - 输入为命令行字符串，返回执行结果
-    fn execute_command(input: &str) -> Result<()>;
+    fn execute_command(input: &str) -> HekitResult<()>;
 }
 
 /// 通用的交互式运行函数（支持 HekitResult）
@@ -67,9 +67,9 @@ where
 }
 
 /// 通用的交互式运行函数（支持 anyhow::Result）
-pub fn run_interactive<F, G>(tool_name: &str, execute_fn: F, show_usage_fn: G) -> Result<()>
+pub fn run_interactive<F, G>(tool_name: &str, execute_fn: F, show_usage_fn: G) -> anyhow::Result<()>
 where
-    F: Fn(&str) -> Result<()>,
+    F: Fn(&str) -> anyhow::Result<()>,
     G: Fn(),
 {
     utils::print_chapter_title(&format!("{}", tool_name));
@@ -172,7 +172,7 @@ pub fn execute_common_command<F>(
     command_prefix: &str,
     build_command: F,
     show_usage_fn: fn(),
-) -> Result<clap::ArgMatches>
+) -> anyhow::Result<clap::ArgMatches>
 where
     F: Fn() -> clap::Command,
 {

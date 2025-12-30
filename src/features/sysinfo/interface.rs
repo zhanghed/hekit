@@ -39,7 +39,7 @@ impl ToolInterface for SysInfoTool {
     }
 
     /// 执行命令
-    fn execute_command(input: &str) -> anyhow::Result<()> {
+    fn execute_command(input: &str) -> HekitResult<()> {
         if input.trim().is_empty() {
             Self::show_usage();
             return Ok(());
@@ -58,7 +58,7 @@ impl ToolInterface for SysInfoTool {
 
         let config = SysInfoConfig::from_matches(&matches)?;
         let core = SysInfoCore::new(config);
-        core.execute().map_err(|e| anyhow::anyhow!(e.to_string()))
+        core.execute()
     }
 }
 
@@ -66,17 +66,7 @@ impl ToolInterface for SysInfoTool {
 pub fn run_interactive() -> HekitResult<()> {
     common::run_interactive_hekit(
         SysInfoTool::tool_name(),
-        |input| {
-            let matches = common::execute_common_command_hekit(
-                input,
-                "sysinfo",
-                SysInfoConfig::build_clap_command,
-                SysInfoTool::show_usage,
-            )?;
-            let config = SysInfoConfig::from_matches(&matches)?;
-            let core = SysInfoCore::new(config);
-            core.execute()
-        },
+        SysInfoTool::execute_command,
         || {
             SysInfoTool::show_usage();
         },

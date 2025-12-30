@@ -1,5 +1,4 @@
-use anyhow::Result;
-
+use crate::error::HekitResult;
 use crate::features::common;
 use crate::features::common::ToolInterface;
 use crate::features::search::config::BatchSearchConfig;
@@ -38,13 +37,13 @@ impl ToolInterface for SearchTool {
     }
 
     /// 执行命令
-    fn execute_command(input: &str) -> Result<()> {
+    fn execute_command(input: &str) -> HekitResult<()> {
         if input.trim().is_empty() {
             Self::show_usage();
             return Ok(());
         }
 
-        let matches = common::execute_common_command(
+        let matches = common::execute_common_command_hekit(
             input,
             "search",
             BatchSearchConfig::build_clap_command,
@@ -61,15 +60,15 @@ impl ToolInterface for SearchTool {
 
         let config = BatchSearchConfig::from_matches(&matches)?;
         println!("高性能搜索工具启动");
-        let _ = BatchSearchCore::search_files(&config)?;
+        BatchSearchCore::search_files(&config)?;
 
         Ok(())
     }
 }
 
 /// 运行交互式界面
-pub fn run_interactive() -> Result<()> {
-    common::run_interactive(SearchTool::tool_name(), SearchTool::execute_command, || {
+pub fn run_interactive() -> HekitResult<()> {
+    common::run_interactive_hekit(SearchTool::tool_name(), SearchTool::execute_command, || {
         SearchTool::show_usage();
     })
 }

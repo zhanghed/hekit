@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Result};
+use crate::error::{HekitError, HekitResult};
 use glob::glob;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -18,7 +18,7 @@ impl BatchConvertCore {
     }
 
     /// 执行批量转换
-    pub fn execute(&self) -> Result<()> {
+    pub fn execute(&self) -> HekitResult<()> {
         // 验证配置
         self.config.validate()?;
 
@@ -26,7 +26,7 @@ impl BatchConvertCore {
         let files = self.find_files()?;
 
         if files.is_empty() {
-            return Err(anyhow!("未找到匹配的文件"));
+            return Err(HekitError::FileOperation("未找到匹配的文件".to_string()));
         }
 
         utils::print_info(&format!("找到 {} 个文件需要转换", files.len()));
@@ -41,7 +41,7 @@ impl BatchConvertCore {
     }
 
     /// 查找匹配的文件
-    fn find_files(&self) -> Result<Vec<PathBuf>> {
+    fn find_files(&self) -> HekitResult<Vec<PathBuf>> {
         let pattern = format!(
             "{}/{}",
             self.config.source_dir.display(),
@@ -49,7 +49,9 @@ impl BatchConvertCore {
         );
 
         let mut files = Vec::new();
-        for entry in glob(&pattern)? {
+        for entry in
+            glob(&pattern).map_err(|e| HekitError::FileOperation(format!("文件匹配错误: {}", e)))?
+        {
             match entry {
                 Ok(path) => {
                     if path.is_file() {
@@ -64,7 +66,7 @@ impl BatchConvertCore {
     }
 
     /// 预览转换效果
-    fn preview_conversion(&self, files: &[PathBuf]) -> Result<()> {
+    fn preview_conversion(&self, files: &[PathBuf]) -> HekitResult<()> {
         utils::print_info("转换预览");
 
         for (i, file) in files.iter().enumerate() {
@@ -78,7 +80,7 @@ impl BatchConvertCore {
     }
 
     /// 执行实际转换
-    fn perform_conversion(&self, files: &[PathBuf]) -> Result<()> {
+    fn perform_conversion(&self, files: &[PathBuf]) -> HekitResult<()> {
         let output_dir = self
             .config
             .output_dir
@@ -87,7 +89,8 @@ impl BatchConvertCore {
 
         // 创建输出目录（如果需要）
         if !output_dir.exists() {
-            fs::create_dir_all(output_dir)?;
+            fs::create_dir_all(output_dir)
+                .map_err(|e| HekitError::FileOperation(format!("创建目录失败: {}", e)))?;
         }
 
         let mut success_count = 0;
@@ -135,7 +138,7 @@ impl BatchConvertCore {
     }
 
     /// 转换单个文件
-    fn convert_file(&self, source: &Path, target: &Path) -> Result<()> {
+    fn convert_file(&self, source: &Path, target: &Path) -> HekitResult<()> {
         if source == target {
             return Ok(()); // 相同文件，无需转换
         }
@@ -147,13 +150,15 @@ impl BatchConvertCore {
         ) {
             // 相同格式，直接复制
             (src, dst) if src == dst => {
-                fs::copy(source, target)?;
+                fs::copy(source, target)
+                    .map_err(|e| HekitError::FileOperation(format!("文件复制失败: {}", e)))?;
                 Ok(())
             }
             // 文本文件编码转换（简化实现）
             ("txt", "txt") => {
                 // 相同格式，直接复制
-                fs::copy(source, target)?;
+                fs::copy(source, target)
+                    .map_err(|e| HekitError::FileOperation(format!("文件复制失败: {}", e)))?;
                 Ok(())
             }
             // 图片格式转换（占位实现）
@@ -166,7 +171,8 @@ impl BatchConvertCore {
             // 其他格式暂不支持实际转换，先复制文件
             _ => {
                 // 这里可以添加更多格式转换逻辑
-                fs::copy(source, target)?;
+                fs::copy(source, target)
+                    .map_err(|e| HekitError::FileOperation(format!("文件复制失败: {}", e)))?;
                 Ok(())
             }
         }
@@ -174,7 +180,7 @@ impl BatchConvertCore {
 
     /// 图片格式转换（占位实现）
     /// 图片格式转换（实际实现）
-    fn convert_image(&self, source: &Path, target: &Path) -> Result<()> {
+    fn convert_image(&self, source: &Path, target: &Path) -> HekitResult<()> {
         let _source_format = self.config.source_format.to_lowercase(); // 添加下划线前缀
         let target_format = self.config.target_format.to_lowercase();
 
@@ -187,14 +193,16 @@ impl BatchConvertCore {
             "gif" => ImageFormat::Gif,
             _ => {
                 // 不支持的格式，使用默认复制
-                fs::copy(source, target)?;
+                fs::copy(source, target)
+                    .map_err(|e| HekitError::FileOperation(format!("文件复制失败: {}", e)))?;
                 return Ok(());
             }
         };
 
         // 打开并转换图像
-        let img = image::open(source)
-            .map_err(|e| anyhow!("无法打开图像文件 {}: {}", source.display(), e))?;
+        let img = image::open(source).map_err(|e| {
+            HekitError::FileOperation(format!("无法打开图像文件 {}: {}", source.display(), e))
+        })?;
 
         // 根据质量设置调整图像
         let mut output_img = img;
@@ -212,7 +220,9 @@ impl BatchConvertCore {
         // 保存图像
         output_img
             .save_with_format(target, target_image_format)
-            .map_err(|e| anyhow!("无法保存图像文件 {}: {}", target.display(), e))?;
+            .map_err(|e| {
+                HekitError::FileOperation(format!("无法保存图像文件 {}: {}", target.display(), e))
+            })?;
         println!(
             "✓ 图片转换完成: {} -> {}",
             source.display(),
@@ -222,18 +232,21 @@ impl BatchConvertCore {
     }
 
     /// PDF转文本（改进实现）
-    fn convert_pdf_to_text(&self, source: &Path, target: &Path) -> Result<()> {
+    fn convert_pdf_to_text(&self, source: &Path, target: &Path) -> HekitResult<()> {
         // 检查文件是否为PDF
         if let Some(ext) = source.extension() {
             if ext.to_string_lossy().to_lowercase() != "pdf" {
-                return Err(anyhow!("源文件不是PDF格式"));
+                return Err(HekitError::FileOperation("源文件不是PDF格式".to_string()));
             }
         }
 
         // 创建包含基本信息的文本文件
-        let metadata = fs::metadata(source)?;
+        let metadata = fs::metadata(source)
+            .map_err(|e| HekitError::FileOperation(format!("获取文件元数据失败: {}", e)))?;
         let file_size = metadata.len();
-        let modified = metadata.modified()?;
+        let modified = metadata
+            .modified()
+            .map_err(|e| HekitError::FileOperation(format!("获取文件修改时间失败: {}", e)))?;
 
         let content = format!(
             "PDF文件: {}\n文件大小: {} 字节\n修改时间: {:?}\n\nPDF转文本功能需要额外的PDF处理库支持。\n建议使用专门的PDF工具进行转换。",
@@ -242,7 +255,8 @@ impl BatchConvertCore {
             modified
         );
 
-        fs::write(target, content)?;
+        fs::write(target, content)
+            .map_err(|e| HekitError::FileOperation(format!("写入文件失败: {}", e)))?;
         println!(
             "✓ PDF信息提取完成: {} -> {}",
             source.display(),

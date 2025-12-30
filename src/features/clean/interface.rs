@@ -1,8 +1,8 @@
+use crate::error::HekitResult;
 use crate::features::clean::config::BatchCleanConfig;
 use crate::features::clean::core::BatchCleanCore;
 use crate::features::common;
 use crate::features::common::ToolInterface;
-use anyhow::Result;
 
 /// 批量清理工具接口
 pub struct CleanTool;
@@ -18,7 +18,7 @@ impl ToolInterface for CleanTool {
         use crate::utils;
 
         utils::print_separator();
-        println!("{}", "批量清理工具"); // 取消居中：{:^30} -> {}
+        println!("{}", "批量清理工具");
         utils::print_separator();
 
         println!("参数说明:");
@@ -38,8 +38,8 @@ impl ToolInterface for CleanTool {
     }
 
     /// 执行命令
-    fn execute_command(input: &str) -> Result<()> {
-        let matches = common::execute_common_command(
+    fn execute_command(input: &str) -> HekitResult<()> {
+        let matches = common::execute_common_command_hekit(
             input,
             "clean",
             BatchCleanConfig::build_clap_command,
@@ -61,12 +61,11 @@ impl ToolInterface for CleanTool {
         }
 
         // 具体处理逻辑
-        let config =
-            BatchCleanConfig::from_matches(&matches).map_err(|e| anyhow::anyhow!(e.to_string()))?;
+        let config = BatchCleanConfig::from_matches(&matches)?;
         let mut core = BatchCleanCore::new(config);
 
         println!("开始扫描目标目录...");
-        let found_count = core.scan().map_err(|e| anyhow::anyhow!(e.to_string()))?;
+        let found_count = core.scan()?;
 
         if found_count == 0 {
             println!("未找到需要清理的文件或文件夹。");
@@ -101,7 +100,7 @@ impl ToolInterface for CleanTool {
             let mut confirm_input = String::new();
             std::io::stdin()
                 .read_line(&mut confirm_input)
-                .map_err(|e| anyhow::anyhow!(format!("读取输入失败: {}", e)))?;
+                .map_err(|e| crate::error::HekitError::UserInput(format!("读取输入失败: {}", e)))?;
 
             if !confirm_input.trim().eq_ignore_ascii_case("y") {
                 println!("操作已取消。");
@@ -110,7 +109,7 @@ impl ToolInterface for CleanTool {
         }
 
         // 执行清理
-        let cleaned_count = core.execute().map_err(|e| anyhow::anyhow!(e.to_string()))?;
+        let cleaned_count = core.execute()?;
 
         if core.config.preview_mode {
             println!("预览完成，将清理 {} 个项目。", cleaned_count);
@@ -123,12 +122,8 @@ impl ToolInterface for CleanTool {
 }
 
 /// 运行交互式界面
-pub fn run_interactive() -> Result<()> {
-    common::run_interactive(
-        CleanTool::tool_name(),
-        |input| CleanTool::execute_command(input),
-        || {
-            CleanTool::show_usage();
-        },
-    )
+pub fn run_interactive() -> HekitResult<()> {
+    common::run_interactive_hekit(CleanTool::tool_name(), CleanTool::execute_command, || {
+        CleanTool::show_usage();
+    })
 }

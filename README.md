@@ -50,9 +50,6 @@ HEKIT是一个用Rust编写的工具集合，提供各种实用功能。
 ```bash
 git clone https://gitee.com/zhanghed/hekit.git
 cd hekit
-```
-2.  编译安装
-```bash
 cargo build --release
 ```
 
@@ -79,7 +76,6 @@ hekit/
 │       └── mod.rs       # 模块导出
 ├── Cargo.toml           # 项目配置和依赖管理
 └── build.rs             # 构建脚本
-
 ```
 
 ## 📄 许可证

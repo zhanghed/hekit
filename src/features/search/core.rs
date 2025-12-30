@@ -1,4 +1,4 @@
-use anyhow::Result;
+use crate::error::{HekitError, HekitResult};
 use glob::Pattern;
 use std::collections::VecDeque;
 use std::fs;
@@ -16,12 +16,14 @@ impl BatchSearchCore {
     /// 执行文件搜索 - 简化显示版本
     pub fn search_files(
         config: &crate::features::search::config::BatchSearchConfig,
-    ) -> Result<(Vec<PathBuf>, usize)> {
+    ) -> HekitResult<(Vec<PathBuf>, usize)> {
         // 预编译文件名匹配模式
         let name_pattern = if config.case_insensitive {
-            Pattern::new(&config.name_pattern.to_lowercase())?
+            Pattern::new(&config.name_pattern.to_lowercase())
+                .map_err(|e| HekitError::ArgumentParse(format!("文件名模式解析失败: {}", e)))?
         } else {
-            Pattern::new(&config.name_pattern)?
+            Pattern::new(&config.name_pattern)
+                .map_err(|e| HekitError::ArgumentParse(format!("文件名模式解析失败: {}", e)))?
         };
 
         // 预编译文件扩展名（如果指定）- 修复：统一处理大小写
@@ -200,7 +202,7 @@ impl BatchSearchCore {
         min_size: Option<u64>,
         max_size: Option<u64>,
         case_insensitive: bool,
-    ) -> Result<bool> {
+    ) -> HekitResult<bool> {
         // 文件名已经在quick_filename_check中检查过，这里跳过
 
         // 检查文件类型（如果指定）- 修复：正确处理大小写

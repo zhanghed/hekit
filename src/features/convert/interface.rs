@@ -1,5 +1,4 @@
-use anyhow::Result;
-
+use crate::error::HekitResult;
 use crate::features::common;
 use crate::features::common::ToolInterface;
 use crate::features::convert::config::BatchConvertConfig;
@@ -19,7 +18,7 @@ impl ToolInterface for ConvertTool {
         use crate::utils;
 
         utils::print_separator();
-        println!("{}", "批量转换工具"); // 取消居中：{:^30} -> {}
+        println!("{}", "批量转换工具");
         utils::print_separator();
 
         println!("参数说明:");
@@ -44,8 +43,8 @@ impl ToolInterface for ConvertTool {
     }
 
     /// 执行命令
-    fn execute_command(input: &str) -> Result<()> {
-        let matches = common::execute_common_command(
+    fn execute_command(input: &str) -> HekitResult<()> {
+        let matches = common::execute_common_command_hekit(
             input,
             "convert",
             BatchConvertConfig::build_clap_command,
@@ -60,8 +59,8 @@ impl ToolInterface for ConvertTool {
 }
 
 /// 运行交互式界面
-pub fn run_interactive() -> Result<()> {
-    common::run_interactive(
+pub fn run_interactive() -> HekitResult<()> {
+    common::run_interactive_hekit(
         ConvertTool::tool_name(),
         ConvertTool::execute_command,
         || {

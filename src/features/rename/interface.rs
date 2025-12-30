@@ -39,7 +39,7 @@ impl ToolInterface for RenameTool {
     }
 
     /// 执行命令
-    fn execute_command(input: &str) -> anyhow::Result<()> {
+    fn execute_command(input: &str) -> HekitResult<()> {
         let matches = common::execute_common_command_hekit(
             input,
             "rename",
@@ -49,27 +49,13 @@ impl ToolInterface for RenameTool {
 
         let config = BatchRenameConfig::from_matches(&matches)?;
         let core = BatchRenameCore::new(config);
-        core.execute().map_err(|e| anyhow::anyhow!(e.to_string()))
+        core.execute()
     }
 }
 
 /// 运行交互式界面
 pub fn run_interactive() -> HekitResult<()> {
-    common::run_interactive_hekit(
-        RenameTool::tool_name(),
-        |input| {
-            let matches = common::execute_common_command_hekit(
-                input,
-                "rename",
-                BatchRenameConfig::build_clap_command,
-                RenameTool::show_usage,
-            )?;
-            let config = BatchRenameConfig::from_matches(&matches)?;
-            let core = BatchRenameCore::new(config);
-            core.execute()
-        },
-        || {
-            RenameTool::show_usage();
-        },
-    )
+    common::run_interactive_hekit(RenameTool::tool_name(), RenameTool::execute_command, || {
+        RenameTool::show_usage();
+    })
 }
