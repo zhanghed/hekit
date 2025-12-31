@@ -243,3 +243,150 @@ pub fn print_clean_program_title(name: &str, description: &str) {
 
     println!();
 }
+
+/// 打印简洁程序标题（单行显示，减少分行）
+pub fn print_compact_program_title(name: &str, description: &str) {
+    println!();
+    println!("{} - {}", name, description);
+    println!("{}", "─".repeat(name.len() + description.len() + 3));
+    println!();
+}
+
+/// 打印超紧凑程序标题（最简洁的显示）
+pub fn print_super_compact_program_title(name: &str, description: &str) {
+    println!();
+    println!("{} {}", name, description);
+    println!("{}", "─".repeat(name.len() + description.len() + 1));
+}
+
+/// 打印紧凑菜单项（减少空行，更紧凑）
+pub fn print_compact_menu_item(number: &str, name: &str, description: &str) {
+    let bullet = get_compatible_icon("bullet");
+    println!("{} {}. {:<10} - {}", bullet, number, name, description);
+}
+
+/// 打印简洁分隔线（更短的分隔线）
+pub fn print_compact_separator() {
+    println!("{}", "─".repeat(25));
+}
+
+/// 打印紧凑工具标题（单行显示）
+pub fn print_compact_tool_title(title: &str) {
+    println!("{}", title);
+    println!("{}", "─".repeat(title.len()));
+}
+
+/// 打印紧凑章节标题（单行显示）
+pub fn print_compact_chapter_title(title: &str) {
+    println!("{}", title);
+    println!("{}", "─".repeat(title.len()));
+}
+
+/// 打印紧凑菜单标题（单行显示）
+pub fn print_compact_menu_title(menu_name: &str) {
+    println!("{}", menu_name);
+    println!("{}", "─".repeat(menu_name.len()));
+}
+
+/// 检测终端是否支持Unicode字符（如表情符号）
+pub fn supports_unicode() -> bool {
+    // 首先检查是否在传统CMD中（最严格的检测）
+    if let Ok(comspec) = std::env::var("COMSPEC") {
+        if comspec.to_lowercase().contains("cmd.exe") {
+            // 在传统CMD中，强制禁用Unicode
+            return false;
+        }
+    }
+
+    // 检查是否在Windows Terminal或现代终端中
+    if let Ok(term) = std::env::var("TERM_PROGRAM") {
+        if term.contains("WindowsTerminal") || term.contains("vscode") {
+            return true;
+        }
+    }
+
+    if let Ok(term) = std::env::var("WT_SESSION") {
+        // Windows Terminal会话
+        return !term.is_empty();
+    }
+
+    // 检查是否在PowerShell中（通常支持Unicode）
+    if let Ok(psmodulepath) = std::env::var("PSModulePath") {
+        if !psmodulepath.is_empty() {
+            // 在PowerShell中，默认启用Unicode
+            return true;
+        }
+    }
+
+    // 默认保守策略：在不确定的情况下禁用Unicode，避免显示方框
+    false
+}
+
+/// 获取兼容的图标字符（在传统终端中使用简单字符）
+pub fn get_compatible_icon(icon_type: &str) -> &str {
+    if supports_unicode() {
+        match icon_type {
+            "success" => "✅",
+            "warning" => "⚠️",
+            "error" => "❌",
+            "info" => "ℹ️",
+            "check" => "✓",
+            "cross" => "✗",
+            "arrow" => "👉",
+            "project" => "🌐",
+            "download" => "⬇️",
+            "update" => "🔄",
+            "about" => "📋",
+            "author" => "👤",
+            "version" => "📦",
+            _ => "•",
+        }
+    } else {
+        match icon_type {
+            "success" => "[OK]",
+            "warning" => "[!]",
+            "error" => "[X]",
+            "info" => "[i]",
+            "check" => "[√]",
+            "cross" => "[×]",
+            "arrow" => ">",
+            "project" => "[URL]",
+            "download" => "[DL]",
+            "update" => "[UP]",
+            "about" => "[AB]",
+            "author" => "[AU]",
+            "version" => "[V]",
+            _ => "*",
+        }
+    }
+}
+
+/// 打印兼容的成功信息
+pub fn print_compatible_success(msg: &str) {
+    let icon = get_compatible_icon("success");
+    println!("{} {}", icon, msg);
+}
+
+/// 打印兼容的警告信息
+pub fn print_compatible_warning(msg: &str) {
+    let icon = get_compatible_icon("warning");
+    println!("{} {}", icon, msg);
+}
+
+/// 打印兼容的错误信息
+pub fn print_compatible_error(msg: &str) {
+    let icon = get_compatible_icon("error");
+    println!("{} {}", icon, msg);
+}
+
+/// 打印兼容的信息
+pub fn print_compatible_info(msg: &str) {
+    let icon = get_compatible_icon("info");
+    println!("{} {}", icon, msg);
+}
+
+/// 打印兼容的菜单项
+pub fn print_compatible_menu_item(number: &str, name: &str, description: &str) {
+    let bullet = get_compatible_icon("bullet");
+    println!("  {} {}. {:<12} - {}", bullet, number, name, description);
+}

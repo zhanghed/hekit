@@ -27,53 +27,81 @@ impl App {
 
         loop {
             Self::show_main_menu();
-            let choice = match utils::get_user_input("请选择 (输入数字): ") {
+            let choice = match utils::get_user_input(&format!(
+                "{} 请选择功能 (输入数字): ",
+                utils::get_compatible_icon("arrow")
+            )) {
                 Ok(input) => input,
                 Err(e) => {
-                    println!("获取用户输入失败: {}", e);
+                    utils::print_compatible_error(&format!("获取用户输入失败: {}", e));
                     continue;
                 }
             };
 
+            // 修改进入工具时的提示信息
             match choice.as_str() {
                 "1" => {
-                    println!("进入批量重命名工具");
+                    utils::print_compatible_success("进入批量重命名");
                     self.run_batch_rename()?;
                 }
                 "2" => {
-                    println!("进入批量搜索工具");
+                    utils::print_compatible_success("进入批量搜索");
                     self.run_batch_search()?;
                 }
                 "3" => {
-                    println!("进入批量压缩工具");
+                    utils::print_compatible_success("进入批量压缩");
                     self.run_batch_compress()?;
                 }
                 "4" => {
-                    println!("进入批量转换工具");
+                    utils::print_compatible_success("进入批量转换");
                     self.run_batch_convert()?;
                 }
                 "5" => {
-                    println!("进入批量清理工具");
+                    utils::print_compatible_success("进入批量清理");
                     self.run_batch_clean()?;
                 }
                 "6" => {
-                    println!("进入系统信息工具");
+                    utils::print_compatible_success("进入系统信息");
                     self.run_sysinfo()?;
                 }
                 "0" => {
                     self.show_about_info()?;
                 }
                 _ => {
-                    println!("无效的选择，请重新输入");
+                    utils::print_compatible_warning("无效的选择，请重新输入");
                 }
             }
         }
     }
 
-    /// 显示程序标题
+    /// 显示程序标题（使用超紧凑格式）
     fn show_program_title() {
-        // 使用简洁标题设计（显示名称和简介，正常显示）
-        utils::print_large_simple_title("HEKIT", "      一个工具集合");
+        let version = env!("CARGO_PKG_VERSION");
+        utils::print_super_compact_program_title("HEKIT", &format!("v{} - 工具集合", version));
+    }
+
+    // 修改主菜单中的显示
+    fn show_main_menu() {
+        utils::print_super_compact_program_title("HEKIT", "主菜单");
+
+        // 菜单项数据 - 统一工具名称格式
+        let menu_items = vec![
+            ("1", "批量重命名", "多种重命名规则，预览模式"),
+            ("2", "批量搜索", "文件名模式搜索，文件类型过滤"),
+            ("3", "批量压缩", "支持ZIP/TAR格式，可调压缩级别"),
+            ("4", "批量转换", "图片格式转换，文档格式转换"),
+            ("5", "批量清理", "清理空文件夹、临时文件"),
+            ("6", "系统信息", "CPU/内存/磁盘/网络监控"),
+            ("0", "关于/更新", "查看程序信息，检查更新"),
+        ];
+
+        // 紧凑的菜单显示
+        for (number, name, description) in menu_items {
+            utils::print_compact_menu_item(number, name, description);
+        }
+
+        println!();
+        utils::print_compact_separator();
     }
 
     /// 运行批量重命名工具
@@ -111,63 +139,47 @@ impl App {
             .map_err(|e| anyhow::anyhow!("系统信息工具执行失败: {}", e))
     }
 
-    /// 显示关于信息（包含检查更新）
+    /// 显示关于信息（使用紧凑格式）
     fn show_about_info(&self) -> Result<()> {
-        utils::print_separator();
-        utils::print_chapter_title("HEKIT - 关于");
-        println!("版本: {}", env!("CARGO_PKG_VERSION"));
-        println!("作者: zhanghed");
+        let description = env!("CARGO_PKG_DESCRIPTION");
+        let version = env!("CARGO_PKG_VERSION");
 
-        println!("项目地址: {}", "https://gitee.com/zhanghed/hekit");
-        println!("下载地址: {}", "https://gitee.com/zhanghed/hekit/releases");
+        utils::print_super_compact_program_title("HEKIT", &format!("v{} - 工具集合", version));
 
-        // 检查更新但不主动跳转
-        println!("检查更新中...");
+        utils::print_compatible_info(&format!("项目描述: {}", description));
+        utils::print_compatible_info(&format!("作者: zhanghed"));
+        utils::print_compatible_info(&format!("版本: {}", version));
+        println!();
+
+        utils::print_compatible_info("项目地址:");
+        utils::print_clickable_link(
+            "https://gitee.com/zhanghed/hekit",
+            "https://gitee.com/zhanghed/hekit",
+        );
+
+        utils::print_compatible_info("下载地址:");
+        utils::print_clickable_link(
+            "https://gitee.com/zhanghed/hekit/releases",
+            "https://gitee.com/zhanghed/hekit/releases",
+        );
+        println!();
+
+        // 检查更新
+        utils::print_compatible_info("检查更新中...");
         if let Ok((has_update, latest_version)) =
             crate::version::VersionChecker::check_update_sync()
         {
             if has_update && !latest_version.is_empty() {
-                println!("发现新版本: {}", latest_version);
-                println!("请访问下载地址获取最新版本");
+                utils::print_compatible_success(&format!("发现新版本: {}", latest_version));
+                utils::print_compatible_info("请访问下载地址获取最新版本");
             } else {
-                println!("已是最新版本");
+                utils::print_compatible_success("已是最新版本");
             }
         } else {
-            println!("检查更新失败");
+            utils::print_compatible_error("检查更新失败");
         }
-        utils::print_separator();
+
+        utils::print_compact_separator();
         Ok(())
-    }
-
-    /// 显示主菜单（单列显示，每项间隔空行）
-    fn show_main_menu() {
-        utils::print_separator();
-        println!("HEKIT - 主菜单"); // 取消居中显示，改为左对齐
-        utils::print_separator();
-        println!(); // 添加空行
-
-        // 菜单项数据
-        let menu_items = vec![
-            ("1", "批量重命名"),
-            ("2", "批量搜索"),
-            ("3", "批量压缩"),
-            ("4", "批量转换"),
-            ("5", "批量清理"),
-            ("6", "系统信息工具"),
-            ("0", "关于 HEKIT"),
-        ];
-
-        // 单列显示，每项一行，项之间添加空行
-        for (i, (num, text)) in menu_items.iter().enumerate() {
-            println!("      {:>2}. {}", num, text);
-
-            // 在每项后添加空行（除了最后一项）
-            if i < menu_items.len() - 1 {
-                println!();
-            }
-        }
-
-        println!(); // 添加空行
-        utils::print_separator();
     }
 }

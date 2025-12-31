@@ -3,6 +3,7 @@ use crate::features::clean::config::BatchCleanConfig;
 use crate::features::clean::core::BatchCleanCore;
 use crate::features::common;
 use crate::features::common::ToolInterface;
+use crate::utils;
 
 /// 批量清理工具接口
 pub struct CleanTool;
@@ -10,16 +11,13 @@ pub struct CleanTool;
 impl ToolInterface for CleanTool {
     /// 工具名称
     fn tool_name() -> &'static str {
-        "批量清理工具"
+        "批量清理"
     }
 
     /// 显示使用说明
     fn show_usage() {
-        use crate::utils;
-
-        utils::print_separator();
-        println!("{}", "批量清理工具");
-        utils::print_separator();
+        utils::print_compact_tool_title("批量清理");
+        println!();
 
         println!("参数说明:");
         println!("  -d, --path <目标文件夹>     目标文件夹（默认当前目录）");
@@ -29,17 +27,19 @@ impl ToolInterface for CleanTool {
         println!("  -v, --preview               预览模式（不实际删除）");
         println!("  -b, --backup                启用备份功能");
         println!("  --backup-dir <备份目录>     备份目录路径");
+        println!();
 
         println!("实用示例:");
         println!("  清理空文件夹: -d \"F:\\test\" -m empty -v");
         println!("  清理临时文件: -m temp -b");
         println!("  清理7天前日志: -m log --days 7");
-        utils::print_separator();
+
+        utils::print_compact_separator();
     }
 
     /// 执行命令
     fn execute_command(input: &str) -> HekitResult<()> {
-        let matches = common::execute_common_command_hekit(
+        let matches = common::execute_common_command(
             input,
             "clean",
             BatchCleanConfig::build_clap_command,
@@ -64,29 +64,29 @@ impl ToolInterface for CleanTool {
         let config = BatchCleanConfig::from_matches(&matches)?;
         let mut core = BatchCleanCore::new(config);
 
-        println!("开始扫描目标目录...");
+        utils::print_info("开始扫描目标目录...");
         let found_count = core.scan()?;
 
         if found_count == 0 {
-            println!("未找到需要清理的文件或文件夹。");
+            utils::print_info("未找到需要清理的文件或文件夹。");
             return Ok(());
         }
 
-        println!("找到 {} 个需要清理的项目:", found_count);
+        utils::print_info(&format!("找到 {} 个需要清理的项目:", found_count));
 
         // 显示找到的文件
         let files = core.get_files_to_clean();
         let folders = core.get_folders_to_clean();
 
         if !files.is_empty() {
-            println!("\n文件列表:");
+            utils::print_info("\n文件列表:");
             for file in files {
                 println!("  - {:?}", file);
             }
         }
 
         if !folders.is_empty() {
-            println!("\n文件夹列表:");
+            utils::print_info("\n文件夹列表:");
             for folder in folders {
                 println!("  - {:?}", folder);
             }
@@ -94,16 +94,16 @@ impl ToolInterface for CleanTool {
 
         // 确认执行
         if core.config.preview_mode {
-            println!("\n当前为预览模式，不会实际删除文件。");
+            utils::print_info("\n当前为预览模式，不会实际删除文件。");
         } else {
-            print!("\n确认执行清理操作？(y/n): ");
+            utils::print_prompt("\n确认执行清理操作？(y/n): ");
             let mut confirm_input = String::new();
             std::io::stdin()
                 .read_line(&mut confirm_input)
                 .map_err(|e| crate::error::HekitError::UserInput(format!("读取输入失败: {}", e)))?;
 
             if !confirm_input.trim().eq_ignore_ascii_case("y") {
-                println!("操作已取消。");
+                utils::print_info("操作已取消。");
                 return Ok(());
             }
         }
@@ -112,9 +112,9 @@ impl ToolInterface for CleanTool {
         let cleaned_count = core.execute()?;
 
         if core.config.preview_mode {
-            println!("预览完成，将清理 {} 个项目。", cleaned_count);
+            utils::print_success(&format!("预览完成，将清理 {} 个项目。", cleaned_count));
         } else {
-            println!("清理完成，已清理 {} 个项目。", cleaned_count);
+            utils::print_success(&format!("清理完成，已清理 {} 个项目。", cleaned_count));
         }
 
         Ok(())

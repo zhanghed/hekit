@@ -1,7 +1,6 @@
 //! 公共工具接口模块 - 提供统一的工具接口和通用功能
 use crate::error::{handle_error, HekitError, HekitResult};
 use crate::utils;
-use anyhow::anyhow;
 use clap::error::ErrorKind;
 use shlex::split;
 
@@ -27,7 +26,7 @@ where
     F: Fn(&str) -> HekitResult<()>,
     G: Fn(),
 {
-    utils::print_chapter_title(&format!("{}", tool_name));
+    utils::print_compact_tool_title(tool_name);
     println!("输入 help 查看详细说明，back 返回上一级");
 
     loop {
@@ -72,7 +71,7 @@ where
     F: Fn(&str) -> anyhow::Result<()>,
     G: Fn(),
 {
-    utils::print_chapter_title(&format!("{}", tool_name));
+    utils::print_compact_tool_title(tool_name);
     println!("输入 help 查看详细说明，back 返回上一级");
 
     loop {
@@ -111,8 +110,8 @@ where
     Ok(())
 }
 
-/// 通用的命令执行函数（支持 HekitResult）
-pub fn execute_common_command_hekit<F>(
+/// 通用的命令执行函数
+pub fn execute_common_command<F>(
     input: &str,
     command_prefix: &str,
     build_command: F,
@@ -154,66 +153,14 @@ where
                 Ok(clap::ArgMatches::default())
             }
             ErrorKind::DisplayVersion => {
-                utils::print_info(&format!("{} v1.0.0", command_prefix));
+                let version = env!("CARGO_PKG_VERSION");
+                utils::print_info(&format!("{} v{}", command_prefix, version));
                 Ok(clap::ArgMatches::default())
             }
             _ => {
                 // 使用统一的错误处理
                 handle_error(&e, "参数解析失败");
                 Err(HekitError::ArgumentParse(e.to_string()))
-            }
-        },
-    }
-}
-
-/// 通用的命令执行函数（支持 anyhow::Result）
-pub fn execute_common_command<F>(
-    input: &str,
-    command_prefix: &str,
-    build_command: F,
-    show_usage_fn: fn(),
-) -> anyhow::Result<clap::ArgMatches>
-where
-    F: Fn() -> clap::Command,
-{
-    // 处理help命令
-    if input.trim() == "help" {
-        show_usage_fn();
-        return Ok(clap::ArgMatches::default());
-    }
-
-    // 检查是否为单个字母（可能是误输入）
-    let trimmed_input = input.trim();
-    if trimmed_input.len() == 1 && trimmed_input.chars().all(|c| c.is_alphabetic()) {
-        return Err(anyhow!("单字母输入，显示使用说明"));
-    }
-
-    // 预处理Windows路径
-    let preprocessed_input = preprocess_windows_paths(input);
-
-    // 解析命令行参数
-    let full_command = format!("{} {}", command_prefix, preprocessed_input);
-    let args = match split(&full_command) {
-        Some(args) => args,
-        None => return Err(anyhow!("命令行参数解析失败")),
-    };
-
-    // 执行命令并处理结果
-    match build_command().try_get_matches_from(&args) {
-        Ok(matches) => Ok(matches),
-        Err(e) => match e.kind() {
-            ErrorKind::DisplayHelp => {
-                show_usage_fn();
-                Ok(clap::ArgMatches::default())
-            }
-            ErrorKind::DisplayVersion => {
-                utils::print_info(&format!("{} v1.0.0", command_prefix));
-                Ok(clap::ArgMatches::default())
-            }
-            _ => {
-                // 使用统一的错误处理
-                handle_error(&e, "参数解析失败");
-                Err(anyhow!("参数解析失败"))
             }
         },
     }

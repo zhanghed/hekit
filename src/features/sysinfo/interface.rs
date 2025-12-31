@@ -10,16 +10,15 @@ pub struct SysInfoTool;
 impl ToolInterface for SysInfoTool {
     /// 工具名称
     fn tool_name() -> &'static str {
-        "系统信息工具"
+        "系统信息"
     }
 
     /// 显示使用说明
     fn show_usage() {
         use crate::utils;
 
-        utils::print_separator();
-        println!("{}", "系统信息工具");
-        utils::print_separator();
+        utils::print_compact_tool_title("系统信息");
+        println!();
 
         println!("参数说明:");
         println!("  -a, --all        显示所有信息");
@@ -30,12 +29,14 @@ impl ToolInterface for SysInfoTool {
         println!("  -n, --network    显示网络信息");
         println!("  -p, --processes  显示进程信息");
         println!("  -r, --refresh    刷新系统信息");
+        println!();
 
         println!("实用示例:");
         println!("  显示完整系统信息: --all");
         println!("  显示CPU信息: --cpu");
         println!("  显示内存信息: --memory");
-        utils::print_separator();
+
+        utils::print_compact_separator();
     }
 
     /// 执行命令
@@ -45,7 +46,7 @@ impl ToolInterface for SysInfoTool {
             return Ok(());
         }
 
-        let matches = common::execute_common_command_hekit(
+        let matches = common::execute_common_command(
             input,
             "sysinfo",
             SysInfoConfig::build_clap_command,

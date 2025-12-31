@@ -10,16 +10,15 @@ pub struct RenameTool;
 impl ToolInterface for RenameTool {
     /// 工具名称
     fn tool_name() -> &'static str {
-        "批量重命名工具"
+        "批量重命名"
     }
 
     /// 显示使用说明
     fn show_usage() {
         use crate::utils;
 
-        utils::print_separator();
-        println!("{}", "批量重命名工具");
-        utils::print_separator();
+        utils::print_compact_tool_title("批量重命名");
+        println!();
 
         println!("参数说明:");
         println!("  -d, --path <目标文件夹>     目标文件夹（默认当前目录）");
@@ -32,15 +31,17 @@ impl ToolInterface for RenameTool {
         println!("  -v, --preview              预览效果（不真改名）");
         println!("  -b, --backup               备份原文件（自动加.bak后缀）");
         println!("  -c, --case                 不区分大小写匹配");
+        println!();
 
         println!("实用示例:");
         println!("  为jpg照片添加前缀和序号: -d \"F:\\test\" -m \"*.jpg\" -p \"2024_\" -n 1 -v");
-        utils::print_separator();
+
+        utils::print_compact_separator();
     }
 
     /// 执行命令
     fn execute_command(input: &str) -> HekitResult<()> {
-        let matches = common::execute_common_command_hekit(
+        let matches = common::execute_common_command(
             input,
             "rename",
             BatchRenameConfig::build_clap_command,
