@@ -35,7 +35,7 @@ impl BatchCompressCore {
     }
 
     /// 扫描匹配的文件
-    fn scan_files(&self) -> HekitResult<Vec<PathBuf>> {
+    pub fn scan_files(&self) -> HekitResult<Vec<PathBuf>> {
         let pattern = self.config.path.join(&self.config.match_pattern);
         let pattern = pattern.to_string_lossy().to_string();
 

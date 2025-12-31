@@ -1,10 +1,9 @@
 use crate::error::HekitResult;
-use crate::features::common;
 use crate::features::common::ToolInterface;
 use crate::features::compress::config::BatchCompressConfig;
 use crate::features::compress::core::BatchCompressCore;
 
-/// 批量压缩工具接口实现
+/// 压缩工具接口
 pub struct CompressTool;
 
 impl ToolInterface for CompressTool {
@@ -17,50 +16,70 @@ impl ToolInterface for CompressTool {
     fn show_usage() {
         use crate::utils;
 
-        utils::print_compact_tool_title("批量压缩");
+        utils::print_compact_tool_title("批量压缩工具");
         println!();
 
         println!("参数说明:");
-        println!("  -d, --path <目标文件夹>    目标文件夹（默认当前目录）");
-        println!("  -m, --match <文件模式>     选文件（通配符 *）");
-        println!("  -f, --format <压缩格式>    压缩格式（zip, tar.gz, tar.bz2）");
-        println!("  -o, --output <输出路径>    输出文件路径（默认同目录）");
-        println!("  -l, --level <压缩级别>     压缩级别 1-9（默认6）");
-        println!("  -r, --recursive           递归处理子目录");
-        println!("  -p, --preview             预览效果（不真压缩）");
+        println!("  -d, --path       目标文件夹（默认当前目录）");
+        println!("  -m, --match      文件匹配模式（通配符 *）");
+        println!("  -f, --format     压缩格式（zip, tar.gz, tar.bz2）");
+        println!("  -o, --output     输出文件路径");
+        println!("  -l, --level      压缩级别 1-9（默认6）");
+        println!("  -r, --recursive  递归处理子目录");
+        println!("  -p, --preview    预览效果（不真压缩）");
         println!();
 
         println!("实用示例:");
-        println!("  压缩图片: -d \"F:\\photos\" -m \"*.jpg\" -f zip -l 9");
-        println!("  预览效果: -m \"*.txt\" -p");
+        println!("  压缩所有txt文件: --match *.txt");
+        println!("  压缩图片到tar.gz: --match *.jpg --format tar.gz");
+        println!("  高压缩级别: --level 9");
 
         utils::print_compact_separator();
     }
 
-    /// 执行压缩命令
+    /// 执行命令
     fn execute_command(input: &str) -> HekitResult<()> {
-        // 使用公共命令执行函数处理参数解析
-        let matches = common::execute_common_command(
+        if input.trim().is_empty() {
+            Self::show_usage();
+            return Ok(());
+        }
+
+        let matches = crate::features::common::execute_common_command(
             input,
             "compress",
             BatchCompressConfig::build_clap_command,
             Self::show_usage,
         )?;
 
-        // 创建配置并执行压缩逻辑
-        let config = BatchCompressConfig::from_matches(&matches)?;
+        if input.trim() == "help" {
+            return Ok(());
+        }
+
+        let config = BatchCompressConfig::from_matches(&matches)
+            .map_err(|e| crate::error::HekitError::UserInput(format!("配置错误: {}", e)))?;
         let core = BatchCompressCore::new(config);
-        core.execute()
+
+        // 修复：使用scan_files方法而不是scan
+        let files = core.scan_files()?;
+        let count = files.len();
+
+        if core.config.preview {
+            println!("预览模式：找到 {} 个待压缩文件", count);
+        } else {
+            // 修复：execute方法返回HekitResult<()>，不需要接收返回值
+            core.execute()?;
+            println!("成功压缩 {} 个文件", count);
+        }
+
+        Ok(())
     }
 }
 
-/// 运行交互式压缩界面
+/// 运行交互式界面
 pub fn run_interactive() -> HekitResult<()> {
-    common::run_interactive_hekit(
-        CompressTool::tool_name(),
+    crate::features::common::run_interactive(
+        "批量压缩",
         CompressTool::execute_command,
-        || {
-            CompressTool::show_usage();
-        },
+        CompressTool::show_usage,
     )
 }

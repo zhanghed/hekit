@@ -9,12 +9,37 @@ use image::ImageFormat;
 
 /// 批量转换核心逻辑
 pub struct BatchConvertCore {
-    config: BatchConvertConfig,
+    pub config: BatchConvertConfig,
 }
 
 impl BatchConvertCore {
     pub fn new(config: BatchConvertConfig) -> Self {
         Self { config }
+    }
+
+    /// 查找匹配的文件
+    pub fn find_files(&self) -> HekitResult<Vec<PathBuf>> {
+        let pattern = format!(
+            "{}/{}",
+            self.config.source_dir.display(),
+            self.config.file_pattern
+        );
+
+        let mut files = Vec::new();
+        for entry in
+            glob(&pattern).map_err(|e| HekitError::FileOperation(format!("文件匹配错误: {}", e)))?
+        {
+            match entry {
+                Ok(path) => {
+                    if path.is_file() {
+                        files.push(path);
+                    }
+                }
+                Err(e) => eprintln!("文件匹配错误: {}", e),
+            }
+        }
+
+        Ok(files)
     }
 
     /// 执行批量转换
@@ -38,31 +63,6 @@ impl BatchConvertCore {
 
         // 实际转换
         self.perform_conversion(&files)
-    }
-
-    /// 查找匹配的文件
-    fn find_files(&self) -> HekitResult<Vec<PathBuf>> {
-        let pattern = format!(
-            "{}/{}",
-            self.config.source_dir.display(),
-            self.config.file_pattern
-        );
-
-        let mut files = Vec::new();
-        for entry in
-            glob(&pattern).map_err(|e| HekitError::FileOperation(format!("文件匹配错误: {}", e)))?
-        {
-            match entry {
-                Ok(path) => {
-                    if path.is_file() {
-                        files.push(path);
-                    }
-                }
-                Err(e) => eprintln!("文件匹配错误: {}", e),
-            }
-        }
-
-        Ok(files)
     }
 
     /// 预览转换效果

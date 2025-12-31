@@ -1,5 +1,5 @@
+// 确保导入正确
 use crate::error::HekitResult;
-use crate::features::common;
 use crate::features::common::ToolInterface;
 use crate::features::rename::config::BatchRenameConfig;
 use crate::features::rename::core::BatchRenameCore;
@@ -10,7 +10,7 @@ pub struct RenameTool;
 impl ToolInterface for RenameTool {
     /// 工具名称
     fn tool_name() -> &'static str {
-        "批量重命名"
+        "重命名"
     }
 
     /// 显示使用说明
@@ -21,32 +21,36 @@ impl ToolInterface for RenameTool {
         println!();
 
         println!("参数说明:");
-        println!("  -d, --path <目标文件夹>     目标文件夹（默认当前目录）");
-        println!("  -m, --match <文件模式>     选文件（通配符 *）");
-        println!("  -p, --prefix <前缀>        加前缀");
-        println!("  -s, --suffix <后缀>        加后缀（扩展名前）");
-        println!("  -r, --replace <替换规则>   替换文字");
-        println!("  -n, --number <起始序号>    加序号（默认1开始，3位补零）");
-        println!("  -e, --ext <扩展名>         改扩展名");
-        println!("  -v, --preview              预览效果（不真改名）");
-        println!("  -b, --backup               备份原文件（自动加.bak后缀）");
-        println!("  -c, --case                 不区分大小写匹配");
+        println!("  -d, --dir <路径>        指定要重命名的目录");
+        println!("  -p, --pattern <模式>    文件名匹配模式");
+        println!("  -r, --replace <替换>    替换字符串");
+        println!("  -i, --interactive       交互式重命名");
         println!();
 
         println!("实用示例:");
-        println!("  为jpg照片添加前缀和序号: -d \"F:\\test\" -m \"*.jpg\" -p \"2024_\" -n 1 -v");
+        println!("  重命名当前目录文件: --dir . --pattern \"*.txt\" --replace \"new_\"");
+        println!("  交互式重命名: --dir /path/to/dir --interactive");
 
         utils::print_compact_separator();
     }
 
     /// 执行命令
     fn execute_command(input: &str) -> HekitResult<()> {
-        let matches = common::execute_common_command(
+        if input.trim().is_empty() {
+            Self::show_usage();
+            return Ok(());
+        }
+
+        let matches = crate::features::common::execute_common_command(
             input,
             "rename",
             BatchRenameConfig::build_clap_command,
             Self::show_usage,
         )?;
+
+        if input.trim() == "help" {
+            return Ok(());
+        }
 
         let config = BatchRenameConfig::from_matches(&matches)?;
         let core = BatchRenameCore::new(config);
@@ -56,7 +60,11 @@ impl ToolInterface for RenameTool {
 
 /// 运行交互式界面
 pub fn run_interactive() -> HekitResult<()> {
-    common::run_interactive_hekit(RenameTool::tool_name(), RenameTool::execute_command, || {
-        RenameTool::show_usage();
-    })
+    crate::features::common::run_interactive(
+        RenameTool::tool_name(),
+        RenameTool::execute_command,
+        || {
+            RenameTool::show_usage();
+        },
+    )
 }

@@ -1,5 +1,4 @@
 use crate::error::HekitResult;
-use crate::features::common;
 use crate::features::common::ToolInterface;
 use crate::features::sysinfo::config::SysInfoConfig;
 use crate::features::sysinfo::core::SysInfoCore;
@@ -46,7 +45,7 @@ impl ToolInterface for SysInfoTool {
             return Ok(());
         }
 
-        let matches = common::execute_common_command(
+        let matches = crate::features::common::execute_common_command(
             input,
             "sysinfo",
             SysInfoConfig::build_clap_command,
@@ -57,7 +56,8 @@ impl ToolInterface for SysInfoTool {
             return Ok(());
         }
 
-        let config = SysInfoConfig::from_matches(&matches)?;
+        let config = SysInfoConfig::from_matches(&matches)
+            .map_err(|e| crate::error::HekitError::UserInput(format!("配置错误: {}", e)))?;
         let core = SysInfoCore::new(config);
         core.execute()
     }
@@ -65,11 +65,9 @@ impl ToolInterface for SysInfoTool {
 
 /// 运行交互式界面
 pub fn run_interactive() -> HekitResult<()> {
-    common::run_interactive_hekit(
-        SysInfoTool::tool_name(),
+    crate::features::common::run_interactive(
+        "系统信息",
         SysInfoTool::execute_command,
-        || {
-            SysInfoTool::show_usage();
-        },
+        SysInfoTool::show_usage,
     )
 }

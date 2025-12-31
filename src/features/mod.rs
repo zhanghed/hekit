@@ -7,7 +7,7 @@ pub mod search;
 pub mod sysinfo;
 
 pub use clean::interface::run_interactive as run_clean;
-pub use common::*;
+pub use common::*; // 这行确保common模块中的所有公共项都能被其他模块访问
 pub use compress::interface::run_interactive as run_compress;
 pub use convert::interface::run_interactive as run_convert;
 pub use rename::interface::run_interactive as run_rename;

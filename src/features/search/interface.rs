@@ -1,37 +1,37 @@
 use crate::error::HekitResult;
-use crate::features::common;
 use crate::features::common::ToolInterface;
 use crate::features::search::config::BatchSearchConfig;
-use crate::features::search::core::BatchSearchCore;
-use crate::utils;
 
-/// 批量搜索工具接口
+/// 搜索工具接口
 pub struct SearchTool;
 
 impl ToolInterface for SearchTool {
     /// 工具名称
     fn tool_name() -> &'static str {
-        "批量搜索"
+        "文件搜索"
     }
 
     /// 显示使用说明
     fn show_usage() {
-        utils::print_compact_tool_title("批量搜索");
+        use crate::utils;
+
+        utils::print_compact_tool_title("文件搜索工具");
         println!();
 
         println!("参数说明:");
-        println!("  -d, --path <搜索路径>     搜索路径（默认当前目录）");
-        println!("  -n, --name <文件名模式>   文件名匹配模式（支持通配符 *）");
-        println!("  -t, --type <文件类型>     按文件类型筛选");
-        println!("  --min-size <最小大小>     最小文件大小（字节）");
-        println!("  --max-size <最大大小>     最大文件大小（字节）");
-        println!("  -r, --recursive           递归搜索子目录");
-        println!("  -c, --case                不区分大小写匹配");
+        println!("  -d, --path       搜索目录（默认当前目录）");
+        println!("  -n, --name       文件名模式（支持通配符 *）");
+        println!("  -t, --type       文件类型（扩展名，如：txt, jpg）");
+        println!("  -s, --size       文件大小范围（格式：min-max，如：1K-10M）");
+        println!("  -r, --recursive  递归搜索子目录");
+        println!("  -i, --ignore-case 忽略大小写");
+        println!("  -c, --content    搜索文件内容（暂不支持）");
         println!();
 
         println!("实用示例:");
-        println!("  搜索jpg文件: -d \"C:\\\" -n \"*.jpg\" -r");
-        println!("  搜索大文件: -n \"*.pdf\" --min-size 1048576");
+        println!("  搜索所有txt文件: --name *.txt");
+        println!("  搜索图片文件: --type jpg --type png");
+        println!("  搜索大文件: --size 10M-100M");
 
         utils::print_compact_separator();
     }
@@ -43,7 +43,7 @@ impl ToolInterface for SearchTool {
             return Ok(());
         }
 
-        let matches = common::execute_common_command(
+        let matches = crate::features::common::execute_common_command(
             input,
             "search",
             BatchSearchConfig::build_clap_command,
@@ -54,13 +54,17 @@ impl ToolInterface for SearchTool {
             return Ok(());
         }
 
-        if !matches.contains_id("path") && !matches.contains_id("name") {
-            return Ok(());
-        }
+        let config = BatchSearchConfig::from_matches(&matches)
+            .map_err(|e| crate::error::HekitError::UserInput(format!("配置错误: {}", e)))?;
 
-        let config = BatchSearchConfig::from_matches(&matches)?;
-        utils::print_info("高性能搜索工具启动");
-        BatchSearchCore::search_files(&config)?;
+        // 修复：使用静态方法而非new方法
+        let (results, skipped) =
+            crate::features::search::core::BatchSearchCore::search_files(&config)?;
+
+        println!("搜索完成！找到 {} 个文件", results.len());
+        if skipped > 0 {
+            println!("跳过 {} 个无法访问的目录", skipped);
+        }
 
         Ok(())
     }
@@ -68,7 +72,9 @@ impl ToolInterface for SearchTool {
 
 /// 运行交互式界面
 pub fn run_interactive() -> HekitResult<()> {
-    common::run_interactive_hekit(SearchTool::tool_name(), SearchTool::execute_command, || {
-        SearchTool::show_usage();
-    })
+    crate::features::common::run_interactive(
+        "文件搜索",
+        SearchTool::execute_command,
+        SearchTool::show_usage,
+    )
 }
