@@ -27,9 +27,7 @@ where
 {
     // 优化工具界面提示，只保留有用的命令
     utils::print_info(&format!("进入 {} 工具", tool_name));
-    utils::print_info("可用命令:");
-    utils::print_info("  • help  - 查看使用说明");
-    utils::print_info("  • back  - 返回主菜单");
+    utils::print_compact_command_hint();
 
     loop {
         utils::print_prompt(&format!("{} > ", tool_name));

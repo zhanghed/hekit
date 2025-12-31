@@ -41,27 +41,21 @@ impl App {
             // 修改进入工具时的提示信息
             match choice.as_str() {
                 "1" => {
-                    utils::print_compatible_success("进入批量重命名");
                     self.run_batch_rename()?;
                 }
                 "2" => {
-                    utils::print_compatible_success("进入批量搜索");
                     self.run_batch_search()?;
                 }
                 "3" => {
-                    utils::print_compatible_success("进入批量压缩");
                     self.run_batch_compress()?;
                 }
                 "4" => {
-                    utils::print_compatible_success("进入批量转换");
                     self.run_batch_convert()?;
                 }
                 "5" => {
-                    utils::print_compatible_success("进入批量清理");
                     self.run_batch_clean()?;
                 }
                 "6" => {
-                    utils::print_compatible_success("进入系统信息");
                     self.run_sysinfo()?;
                 }
                 "0" => {
@@ -77,14 +71,19 @@ impl App {
     /// 显示程序标题（使用超紧凑格式）
     fn show_program_title() {
         let version = env!("CARGO_PKG_VERSION");
-        utils::print_super_compact_program_title("HEKIT", &format!("v{} - 工具集合", version));
+        println!(); // 保留程序开始时的空行
+        println!("HEKIT v{}", version);
+        println!("─────────────────────────"); // 统一分隔线长度
     }
 
     // 修改主菜单显示函数
     fn show_main_menu() {
-        utils::print_super_compact_program_title("HEKIT", "主菜单");
+        // 添加主菜单标题
+        println!();
+        println!("主菜单");
+        println!("─────────────────────────"); // 统一分隔线长度
 
-        // 菜单项数据 - 统一工具名称格式
+        // 菜单项数据
         let menu_items = vec![
             ("1", "批量重命名", "多种重命名规则，预览模式"),
             ("2", "批量搜索", "文件名模式搜索，文件类型过滤"),
@@ -100,11 +99,7 @@ impl App {
             utils::print_compact_menu_item(number, name, description);
         }
 
-        println!();
         utils::print_compact_separator();
-
-        // 简化提示信息，只提示数字选择
-        utils::print_info("请选择功能 (输入数字 1-6，0 查看关于信息)");
     }
 
     /// 运行批量重命名工具
@@ -232,7 +227,7 @@ impl App {
         let description = env!("CARGO_PKG_DESCRIPTION");
         let version = env!("CARGO_PKG_VERSION");
 
-        utils::print_super_compact_program_title("HEKIT", &format!("v{} - 工具集合", version));
+        utils::print_super_compact_program_title("HEKIT", &format!("v{}", version));
 
         utils::print_compatible_info(&format!("项目描述: {}", description));
         utils::print_compatible_info(&format!("作者: zhanghed"));
