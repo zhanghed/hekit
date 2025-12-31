@@ -20,11 +20,17 @@ pub trait ToolInterface {
 pub fn run_interactive<F>(
     tool_name: &str,
     execute_fn: F,
-    _show_usage_fn: impl Fn(),
+    show_usage_fn: impl Fn(),
 ) -> HekitResult<()>
 where
     F: Fn(&str) -> HekitResult<()>,
 {
+    // 优化工具界面提示，只保留有用的命令
+    utils::print_info(&format!("进入 {} 工具", tool_name));
+    utils::print_info("可用命令:");
+    utils::print_info("  • help  - 查看使用说明");
+    utils::print_info("  • back  - 返回主菜单");
+
     loop {
         utils::print_prompt(&format!("{} > ", tool_name));
         let mut input = String::new();
@@ -37,28 +43,32 @@ where
             continue;
         }
 
-        // 处理退出命令
-        if input.eq_ignore_ascii_case("exit") || input.eq_ignore_ascii_case("quit") {
-            utils::print_info("退出交互模式");
-            break;
+        // 处理help命令
+        if input.eq_ignore_ascii_case("help") {
+            show_usage_fn();
+            continue;
         }
 
-        // 处理clear命令
-        if input.eq_ignore_ascii_case("clear") {
-            print!("{}[2J", 27 as char); // 清屏
-            continue;
+        // 处理back命令 - 返回主菜单
+        if input.eq_ignore_ascii_case("back") {
+            utils::print_info("返回主菜单");
+            return Err(HekitError::BackToMainMenu("返回主菜单".to_string()));
         }
 
         // 执行命令
         match execute_fn(input) {
             Ok(_) => {}
             Err(e) => {
+                // 如果是返回主菜单的错误，直接向上传递
+                if let HekitError::BackToMainMenu(_) = e {
+                    return Err(e);
+                }
                 utils::print_error(&format!("执行失败: {}", e));
             }
         }
     }
 
-    Ok(())
+    // 删除这行不可达的代码
 }
 
 /// 通用的命令执行函数

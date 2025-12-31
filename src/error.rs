@@ -24,6 +24,8 @@ pub enum HekitError {
     Search(String),
     /// 转换错误
     Conversion(String),
+    /// 返回主菜单
+    BackToMainMenu(String),
     /// 未知错误
     Unknown(String),
 }
@@ -41,6 +43,7 @@ impl fmt::Display for HekitError {
             HekitError::Rename(msg) => write!(f, "重命名错误: {}", msg),
             HekitError::Search(msg) => write!(f, "搜索错误: {}", msg),
             HekitError::Conversion(msg) => write!(f, "转换错误: {}", msg),
+            HekitError::BackToMainMenu(msg) => write!(f, "{}", msg), // 不显示错误信息
             HekitError::Unknown(msg) => write!(f, "未知错误: {}", msg),
         }
     }

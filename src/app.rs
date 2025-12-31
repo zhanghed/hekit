@@ -1,5 +1,5 @@
 use crate::utils;
-use anyhow::Result; // 移除未使用的 Context 导入
+use anyhow::Result;
 use std::env;
 
 /// 主应用程序结构体
@@ -80,7 +80,7 @@ impl App {
         utils::print_super_compact_program_title("HEKIT", &format!("v{} - 工具集合", version));
     }
 
-    // 修改主菜单中的显示
+    // 修改主菜单显示函数
     fn show_main_menu() {
         utils::print_super_compact_program_title("HEKIT", "主菜单");
 
@@ -102,41 +102,129 @@ impl App {
 
         println!();
         utils::print_compact_separator();
+
+        // 简化提示信息，只提示数字选择
+        utils::print_info("请选择功能 (输入数字 1-6，0 查看关于信息)");
     }
 
     /// 运行批量重命名工具
     fn run_batch_rename(&self) -> Result<()> {
-        crate::features::rename::interface::run_interactive()
-            .map_err(|e| anyhow::anyhow!("重命名工具执行失败: {}", e))
+        match crate::features::rename::interface::run_interactive() {
+            Ok(_) => Ok(()),
+            Err(e) => {
+                // 修复：将HekitError转换为anyhow::Error
+                let e: anyhow::Error = e.into();
+                // 检查是否是返回主菜单的错误
+                if let Some(hekit_error) = e.downcast_ref::<crate::error::HekitError>() {
+                    if matches!(hekit_error, crate::error::HekitError::BackToMainMenu(_)) {
+                        // 返回主菜单，不显示错误信息
+                        return Ok(());
+                    }
+                }
+                // 修复：将HekitError转换为anyhow::Error
+                Err(anyhow::anyhow!("重命名工具执行失败: {}", e))
+            }
+        }
     }
 
     /// 运行批量搜索工具
     fn run_batch_search(&self) -> Result<()> {
-        crate::features::search::interface::run_interactive()
-            .map_err(|e| anyhow::anyhow!("搜索工具执行失败: {}", e))
+        match crate::features::search::interface::run_interactive() {
+            Ok(_) => Ok(()),
+            Err(e) => {
+                // 修复：将HekitError转换为anyhow::Error
+                let e: anyhow::Error = e.into();
+                // 检查是否是返回主菜单的错误
+                if let Some(hekit_error) = e.downcast_ref::<crate::error::HekitError>() {
+                    if matches!(hekit_error, crate::error::HekitError::BackToMainMenu(_)) {
+                        // 返回主菜单，不显示错误信息
+                        return Ok(());
+                    }
+                }
+                // 修复：将HekitError转换为anyhow::Error
+                Err(anyhow::anyhow!("搜索工具执行失败: {}", e))
+            }
+        }
     }
 
     /// 运行批量压缩工具
     fn run_batch_compress(&self) -> Result<()> {
-        crate::features::compress::interface::run_interactive()
-            .map_err(|e| anyhow::anyhow!("压缩工具执行失败: {}", e))
+        match crate::features::compress::interface::run_interactive() {
+            Ok(_) => Ok(()),
+            Err(e) => {
+                // 修复：将HekitError转换为anyhow::Error
+                let e: anyhow::Error = e.into();
+                // 检查是否是返回主菜单的错误
+                if let Some(hekit_error) = e.downcast_ref::<crate::error::HekitError>() {
+                    if matches!(hekit_error, crate::error::HekitError::BackToMainMenu(_)) {
+                        // 返回主菜单，不显示错误信息
+                        return Ok(());
+                    }
+                }
+                // 修复：将HekitError转换为anyhow::Error
+                Err(anyhow::anyhow!("压缩工具执行失败: {}", e))
+            }
+        }
     }
 
-    /// 运行批量转换工具 - 新增方法
+    /// 运行批量转换工具
     fn run_batch_convert(&self) -> Result<()> {
-        crate::features::convert::interface::run_interactive()
-            .map_err(|e| anyhow::anyhow!("转换工具执行失败: {}", e))
+        match crate::features::convert::interface::run_interactive() {
+            Ok(_) => Ok(()),
+            Err(e) => {
+                // 修复：将HekitError转换为anyhow::Error
+                let e: anyhow::Error = e.into();
+                // 检查是否是返回主菜单的错误
+                if let Some(hekit_error) = e.downcast_ref::<crate::error::HekitError>() {
+                    if matches!(hekit_error, crate::error::HekitError::BackToMainMenu(_)) {
+                        // 返回主菜单，不显示错误信息
+                        return Ok(());
+                    }
+                }
+                // 修复：将HekitError转换为anyhow::Error
+                Err(anyhow::anyhow!("转换工具执行失败: {}", e))
+            }
+        }
     }
 
-    /// 运行批量清理工具 - 新增方法
+    /// 运行批量清理工具
     fn run_batch_clean(&self) -> Result<()> {
-        crate::features::clean::interface::run_interactive()
-            .map_err(|e| anyhow::anyhow!("清理工具执行失败: {}", e))
+        match crate::features::clean::interface::run_interactive() {
+            Ok(_) => Ok(()),
+            Err(e) => {
+                // 修复：将HekitError转换为anyhow::Error
+                let e: anyhow::Error = e.into();
+                // 检查是否是返回主菜单的错误
+                if let Some(hekit_error) = e.downcast_ref::<crate::error::HekitError>() {
+                    if matches!(hekit_error, crate::error::HekitError::BackToMainMenu(_)) {
+                        // 返回主菜单，不显示错误信息
+                        return Ok(());
+                    }
+                }
+                // 修复：将HekitError转换为anyhow::Error
+                Err(anyhow::anyhow!("清理工具执行失败: {}", e))
+            }
+        }
     }
+
     /// 运行系统信息工具
     fn run_sysinfo(&self) -> Result<()> {
-        crate::features::sysinfo::interface::run_interactive()
-            .map_err(|e| anyhow::anyhow!("系统信息工具执行失败: {}", e))
+        match crate::features::sysinfo::interface::run_interactive() {
+            Ok(_) => Ok(()),
+            Err(e) => {
+                // 修复：将HekitError转换为anyhow::Error
+                let e: anyhow::Error = e.into();
+                // 检查是否是返回主菜单的错误
+                if let Some(hekit_error) = e.downcast_ref::<crate::error::HekitError>() {
+                    if matches!(hekit_error, crate::error::HekitError::BackToMainMenu(_)) {
+                        // 返回主菜单，不显示错误信息
+                        return Ok(());
+                    }
+                }
+                // 修复：将HekitError转换为anyhow::Error
+                Err(anyhow::anyhow!("系统信息工具执行失败: {}", e))
+            }
+        }
     }
 
     /// 显示关于信息（使用紧凑格式）
